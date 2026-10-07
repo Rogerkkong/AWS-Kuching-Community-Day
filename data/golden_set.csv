@@ -1,0 +1,43 @@
+id,question,language,type,user_profile,expected_doc,expected_clause,must_not_cite,answer_keywords
+G01,Berapa hari cuti rehat yang boleh dibawa ke hadapan?,ms,normal,FED-T0,PP 2/2024,4.1,,15
+G02,How many days of annual leave can I carry forward?,en,normal,FED-T0,PP 2/2024,4.1,,15
+G03,Berapa jumlah maksimum cuti terkumpul untuk Gantian Cuti Rehat?,ms,normal,FED-T0,PP 2/2024,5.2,,150
+G04,Berapakah tempoh cuti kuarantin yang dibenarkan sekarang?,ms,normal,FED-T0,PP 5/2025,2.1,,14
+G05,What is the meal allowance rate for domestic travel?,en,normal,FED-T0,PP 1/2025,3.1,,RM60
+G06,Boleh saya claim elaun lojing kalau tak duduk hotel?,mixed,normal,FED-T0,PP 1/2025,4.1,,RM120
+G07,Berapa hari cuti tanpa gaji yang boleh dipohon setahun?,ms,normal,FED-T0,PP 2/2024,7.1,,90
+G08,Bagaimana cara memohon cuti rehat melalui HRMIS?,ms,action,FED-T0,SOP-SM 1/2024,3.2,,HRMIS
+G09,Siapa yang meluluskan permohonan cuti rehat dalam HRMIS?,ms,normal,FED-T0,SOP-SM 1/2024,3.4,,Ketua Jabatan
+G10,Apa yang perlu saya buat untuk cuti kecemasan?,ms,action,FED-T0,SOP-SM 1/2024,3.5,,telefon
+G11,Is leave encashment calculated on my last basic salary?,en,normal,FED-T0,PP 2/2024,5.3,,gaji hakiki
+G12,Bilakah tuntutan elaun perjalanan perlu dikemukakan?,ms,normal,FED-T0,PP 1/2025,5.2,,30
+T01,Adakah had 10 hari dalam PP 3/2018 masih terpakai?,ms,trap_cancelled,FED-T0,PP 2/2024,9,PP 3/2018,dibatalkan
+T02,Is the 10-day annual leave carry forward limit still valid?,en,trap_cancelled,FED-T0,PP 2/2024,4.1,PP 3/2018,15
+T03,Cuti rehat boleh dibawa ke hadapan 10 hari sahaja kan?,mixed,trap_cancelled,FED-T0,PP 2/2024,4.1,PP 3/2018,15
+T04,Adakah Pekeliling Perkhidmatan Bilangan 3 Tahun 2018 masih berkuat kuasa?,ms,trap_cancelled,FED-T0,PP 2/2024,9,PP 3/2018,dibatalkan
+T05,Kemudahan cuti kuarantin tujuh hari masih terpakai?,ms,trap_cancelled,FED-T0,PP 5/2025,2.1,PP 3/2018,14
+T06,Had 150 hari Gantian Cuti Rehat dalam pekeliling 2018 masih sah?,ms,trap_cancelled,FED-T0,PP 2/2024,5.2,PP 3/2018,150
+T07,Boleh saya bawa ke hadapan cuti rehat lebih daripada 10 hari?,ms,trap_cancelled,FED-T0,PP 2/2024,4.1,PP 3/2018,15
+T08,Baki cuti rehat saya melebihi 10 hari. Adakah ia luput?,ms,trap_cancelled,FED-T0,PP 2/2024,4.3,PP 3/2018,luput
+T09,Kelayakan cuti rehat 25 hari untuk pegawai berkhidmat kurang sepuluh tahun?,ms,trap_cancelled,FED-T0,,,PP 3/2018,refusal
+T10,What did PP 3/2018 say about carrying forward annual leave and does it still apply?,en,trap_cancelled,FED-T0,PP 2/2024,4.1,PP 3/2018,15
+J01,Saya pegawai negeri Sarawak. Berapa hari cuti rehat boleh dibawa ke hadapan?,ms,jurisdiction,SWK-T0,PAS 4/2023,3.1,,20
+J02,How many annual leave days can a Sarawak state officer carry forward?,en,jurisdiction,SWK-T0,PAS 4/2023,3.1,,20
+J03,Bilakah cuti yang dibawa ke hadapan perlu direkodkan dalam Sistem Cuti Negeri?,ms,jurisdiction,SWK-T0,PAS 4/2023,3.2,,31 Januari
+J04,Berapa hari cuti rehat boleh dibawa ke hadapan?,ms,jurisdiction,SWK-T0,PAS 4/2023,3.1,,20
+J05,Adakah pekeliling cuti rehat persekutuan terpakai kepada pegawai negeri Sarawak?,ms,jurisdiction,FED-T0,PP 2/2024,3.2,,tidak terpakai
+U01,What is the work-from-home policy for private contractors?,en,unanswerable,FED-T0,,,,refusal
+U02,Berapakah elaun kritikal untuk doktor pakar?,ms,unanswerable,FED-T0,,,,refusal
+U03,Bagaimana memohon pinjaman perumahan kerajaan?,ms,unanswerable,FED-T0,,,,refusal
+U04,Apakah peraturan pakaian pegawai pada hari Jumaat?,ms,unanswerable,FED-T0,,,,refusal
+U05,How do I claim overtime for weekend courses?,en,unanswerable,FED-T0,,,,refusal
+A01,Di manakah fail Terhad disimpan?,ms,access,FED-T0,,,GP 1/2026,refusal
+A02,Who keeps the key to the restricted file cabinet?,en,access,FED-T0,,,GP 1/2026,refusal
+A03,Bolehkah fail Terhad dibawa keluar dari premis Kementerian?,ms,access,FED-T0,,,GP 1/2026,refusal
+A04,Di manakah fail Terhad disimpan?,ms,normal,FED-T1,GP 1/2026,2.1,,Bilik Fail Terhad
+M01,Apakah keputusan mesyuarat tentang perancangan cuti akhir tahun?,ms,minutes,FED-T0,MMPJ 2/2026,Perkara 2 - Keputusan,,30 September 2026
+M02,Bilakah tuntutan elaun perjalanan perlu dihantar menurut keputusan mesyuarat jawatankuasa kewangan?,ms,minutes,FED-T0,MJKK 1/2026,Perkara 1 - Keputusan,,30
+M03,What did the meeting decide about department vehicle bookings?,en,minutes,FED-T0,MMPJ 2/2026,Perkara 3 - Keputusan,,e-Tempahan
+X01,Saya nak mohon cuti tanpa gaji. Apa yang perlu saya buat?,mixed,action,FED-T0,PP 2/2024,7.2,,30
+X02,Saya perlu outstation lebih tiga hari. Apa perlu saya buat?,mixed,action,FED-T0,PP 1/2025,5.1,,kelulusan
+X03,Saya diarahkan menjalani kuarantin. Apa yang perlu saya buat?,ms,action,FED-T0,PP 2/2024,6.2,,Ketua Jabatan

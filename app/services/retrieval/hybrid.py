@@ -130,6 +130,65 @@ def excluded_payload(c: Candidate) -> dict:
             "issue_date": ch["issue_date"], "page": ch["page_start"], "text": ch["text"], "score": round(c.score, 4)}
 
 
+def inject_amendments(handles: list[PackHandle], selected: list[Candidate], statuses: tuple[str, ...],
+                      clearance: int, n: int) -> list[Candidate]:
+    """When a selected passage comes from an AMENDED document, make sure the amending clause is in the
+    context too (it may not share the question's words), replacing the weakest passage if needed."""
+    have = {c.chunk_id for c in selected}
+    added: dict[int, list[Candidate]] = {}  # amended chunk id -> amending passages
+    for c in list(selected):
+        if c.chunk["status"] != "AMENDED":
+            continue
+        for h in handles:
+            rels = h.conn.execute("SELECT source_doc_id, scope, evidence_text FROM relations WHERE target_doc_id = ? "
+                                  "AND relation_type = 'AMENDS' AND verified = 1", (c.doc_id,)).fetchall()
+            for source_id, scope, evidence in rels:
+                if not _scope_touches(scope, c.chunk.get("clause_ref")):
+                    continue  # e.g. PP 5/2025 amends 6.1 only; a passage on 4.1 stays as it is
+                clause, params = status_clause(statuses)
+                rows = h.conn.execute(f"{CHUNK_SELECT} WHERE d.id = ? AND {clause} AND d.classification_level <= ? "
+                                      "ORDER BY c.chunk_index", [source_id, *params, clearance]).fetchall()
+                key = (evidence or "")[:40]
+                best = next((dict(r) for r in rows if key and key in r["text"].replace("\n", " ")), None)
+                best = best or next((dict(r) for r in rows if "dipinda" in r["text"].lower()), None)
+                if best is None:
+                    continue
+                existing = next((x for x in selected if x.chunk_id == best["chunk_id"]), None)
+                if existing is None and best["chunk_id"] in have:
+                    continue
+                have.add(best["chunk_id"])
+                added.setdefault(c.chunk_id, []).append(existing or Candidate(best, h.tier, score=c.score, role=c.role))
+    if not added:
+        return selected
+    placed = {a.chunk_id for group in added.values() for a in group}
+    base = [c for c in selected if c.chunk_id not in placed]
+    n_new = sum(1 for group in added.values() for a in group if a not in selected)
+    keep = base[: max(1, n - len(placed))] if n_new else base  # new amendments replace the weakest passages
+    out: list[Candidate] = []
+    for c in keep:
+        out.append(c)
+        out += added.get(c.chunk_id, [])  # each amendment right after the passage it amends
+    return out[:n]
+
+
+def _clause_key(ref: str) -> list[int]:
+    return [int(p) for p in ref.split(".")]
+
+
+def _scope_touches(scope: str | None, clause_ref: str | None) -> bool:
+    """True when an AMENDS scope ("whole" or "clauses: 6.1, 6.2") overlaps a chunk's clause_ref ("6.1-6.2")."""
+    import re
+
+    targets = re.findall(r"\d{1,2}(?:\.\d{1,2})*", scope or "")
+    if not targets or not clause_ref:
+        return True
+    m = re.fullmatch(r"(\d+(?:\.\d+)*)(?:-(\d+(?:\.\d+)*))?", clause_ref)
+    if not m:
+        return True
+    lo, hi = _clause_key(m.group(1)), _clause_key(m.group(2) or m.group(1))
+    return any(lo <= _clause_key(t) <= hi or _clause_key(t)[: len(lo)] == lo for t in targets)
+
+
 PREFERRED = {"FEDERAL": {"FEDERAL", "FEDERAL_SARAWAK"}, "SARAWAK": {"SARAWAK", "FEDERAL_SARAWAK"}}
 
 

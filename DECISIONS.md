@@ -102,3 +102,18 @@ Choices made while building, where the spec left room or where reality forced a 
 * **D31. PyInstaller build is windowed** (`console=False`); `--smoke --smoke-out file` verifies a build.
 * **D32. `scripts/dev_server.py`** runs the API in `--browser` mode on a fixed port with the fake backend for
   UI work; `--browser` also writes the tokenised URL to `<data dir>/dev-url.txt`.
+
+## Evaluation
+
+* **D33. BASELINE** = the same retrieval and model, but no status filter, no jurisdiction logic, no
+  excluded list and status hidden from the prompt headers ("-"), i.e. a typical document chatbot that
+  cannot know a circular was cancelled. Access control stays on for both (it is not an LLM property).
+* **D34. Amendment injection.** When a selected passage belongs to an AMENDED document and a verified
+  AMENDS relation's scope touches that clause (e.g. PP 5/2025 amends 6.1), the amending clause is placed
+  right after it in the context, so the model sees the current wording even if the question shares no
+  words with the amendment. Lifted citation accuracy on the golden set from 93% to 96% (fake backend).
+* **D35. `scripts/reset_demo.py` archives instead of deleting**: Publisher DB, uploads, built packs and
+  (with `--officer`) the Officer data folder are moved to `workspace/archive/<time>/`, then v1 is rebuilt.
+* **D36. Golden set** has 42 questions (28 BM, 10 EN, 4 mixed): 11 normal (incl. one cleared TERHAD
+  question), 10 trap_cancelled, 5 jurisdiction, 5 unanswerable, 3 access, 3 minutes, 5 action. The brief
+  asks for ~50% BM / 30% EN / 20% mixed; add more English and mixed questions with the real corpus.

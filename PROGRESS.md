@@ -36,3 +36,9 @@ real models. M1-M7 were developed in one pass and committed together, after the 
 - Live flow verified in the UI: Publisher uploads PP 3/2026 -> verifies "SUPERSEDES PP 1/2025" -> builds v2 -> Officer checks, verifies and installs it -> 2 notifications -> what-changed clause diff.
 - Demo user switcher (Federal TERBUKA, Sarawak TERBUKA, Federal TERHAD); Sarawak profile gets PAS 4/2023 first with the Federal rule "for comparison"; grade and scheme go into the prompt.
 - 60 tests pass (`pytest -q`, about 8 s).
+
+## M8 Analytics and evaluation
+- Every ask is logged locally (query, rewrite, retrieved/excluded ids, answerable, confidence, latency); thumbs up/down feedback.
+- Anonymised usage export (no names, times rounded to the hour) -> Publisher import -> dashboard (unanswered rate by cluster, top unanswered, low confidence, topics, most-excluded cancelled circulars).
+- `data/golden_set.csv` (42 questions) + `scripts/evaluate.py`. Fake backend results: cancelled-citation rate on traps 90% baseline vs **0%** Navigator; citation accuracy 63% vs 96%; MRR 0.69 vs 0.90; access leaks 0. Refusal/keyword numbers are limited by the extractive fake "LLM" and need a rerun with qwen3:4b.
+- Added amendment injection (DECISIONS D34) and `scripts/reset_demo.py` for rehearsals.

@@ -114,3 +114,15 @@ def test_feedback_and_query_log(officer):
 
 def test_token_constant_is_used():
     assert TOKEN == "test-token"
+
+
+def test_amended_clause_brings_its_amendment_into_context(officer):
+    src = ask(officer, "Berapakah tempoh cuti kuarantin yang dibenarkan sekarang?")[0][1]["sources"]
+    nos = [(s["circular_no"], s["clause_ref"]) for s in src]
+    i = nos.index(("PP 2/2024", "6.1-6.2"))
+    assert nos[i + 1] == ("PP 5/2025", "2.1-2.2")  # the amending clause follows the amended one
+
+
+def test_amendment_not_injected_for_untouched_clauses(officer):
+    src = ask(officer, "Berapa hari cuti rehat yang boleh dibawa ke hadapan?")[0][1]["sources"]
+    assert ("PP 5/2025", "2.1-2.2") not in [(s["circular_no"], s["clause_ref"]) for s in src]

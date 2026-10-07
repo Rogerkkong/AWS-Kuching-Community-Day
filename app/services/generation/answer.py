@@ -65,6 +65,8 @@ def retrieve(state, user: dict, question: str, include_historical: bool = False,
         else:
             result.selected, result.conflict = hybrid.apply_jurisdiction(
                 ranked, user, rq, settings.context_passages, strong, settings.conflict_ratio)
+            result.selected = hybrid.inject_amendments(handles, result.selected, statuses, clearance,
+                                                       settings.context_passages)
             if not include_historical and not rq.wants_history and result.selected:
                 excluded = hybrid.excluded_candidates(handles, rq, qvec, clearance, settings, statuses)
                 if excluded:
@@ -91,12 +93,15 @@ def source_payload(r: Retrieval) -> list[dict]:
     return out
 
 
-def build_messages(user: dict, question: str, sources: list[dict]) -> list[dict]:
+def build_messages(user: dict, question: str, sources: list[dict], hide_status: bool = False) -> list[dict]:
+    """hide_status=True is the evaluation baseline: a plain RAG pipeline that knows nothing about validity."""
     blocks = []
     for s in sources:
         status = s["status"]
         if status in ("CANCELLED", "AMENDED", "ONE_OFF") and s.get("status_reason"):
             status = f"{status} ({s['status_reason']})"
+        if hide_status:
+            status = "-"
         blocks.append(prompts.ANSWER_PASSAGE.format(
             n=s["n"], doc_no=s["circular_no"], title=s["title"], doc_type=s["doc_type"], doc_jurisdiction=s["jurisdiction"],
             status=status, date=malay_date(s.get("issue_date")), clause_ref=s["clause_ref"], page=s["page"],
@@ -122,12 +127,13 @@ def sse(event: str, data: dict) -> str:
     return f"event: {event}\ndata: {json.dumps(data, ensure_ascii=False)}\n\n"
 
 
-def ask_events(state, user: dict, question: str, include_historical: bool = False) -> Iterator[str]:
+def ask_events(state, user: dict, question: str, include_historical: bool = False, baseline: bool = False,
+               log: bool = True) -> Iterator[str]:
     settings = state.settings
     client = get_client()
     t0 = time.perf_counter()
     try:
-        r = retrieve(state, user, question, include_historical, client)
+        r = retrieve(state, user, question, include_historical, client, baseline=baseline)
     except Exception as exc:  # noqa: BLE001
         yield sse("error", {"message": f"Carian gagal / Search failed: {exc}"})
         return
@@ -150,7 +156,8 @@ def ask_events(state, user: dict, question: str, include_historical: bool = Fals
     elif sources:
         parser = AnswerStreamParser()
         try:
-            for piece in client.chat_stream(build_messages(user, question, sources), max_tokens=settings.answer_max_tokens):
+            for piece in client.chat_stream(build_messages(user, question, sources, hide_status=baseline),
+                                            max_tokens=settings.answer_max_tokens):
                 for section, text in parser.feed(piece):
                     yield sse("token", {"section": section, "text": text})
                 if parser.answerable is False:
@@ -172,10 +179,12 @@ def ask_events(state, user: dict, question: str, include_historical: bool = Fals
     total_ms = int((time.perf_counter() - t0) * 1000)
     if not answerable:
         conf = "LOW"
-    try:
-        log_id = log_query(state, user, question, r, answerable, conf, total_ms, sources_ms)
-    except Exception:  # noqa: BLE001
-        log_id = None
+    log_id = None
+    if log:
+        try:
+            log_id = log_query(state, user, question, r, answerable, conf, total_ms, sources_ms)
+        except Exception:  # noqa: BLE001
+            log_id = None
     yield sse("final", {
         "answer": answer, "answerable": answerable, "refusal": (answer == REFUSAL_MESSAGE),
         "citations": [f"S{n}" for n in used], "actions": actions, "confidence": conf,

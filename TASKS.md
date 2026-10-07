@@ -61,9 +61,9 @@ app, commit ("M<n>: <name>"), add 3-5 lines to PROGRESS.md.
 - [x] User switcher, Federal/Sarawak comparison panel, grade + scheme in the prompt. *Done when* Sarawak profile sees PAS rule first with comparison panel.
 
 ## M8 Analytics and evaluation
-- [ ] Query logging + feedback. *Done when* each ask writes a query_logs row.
-- [ ] Anonymised export + Publisher import + dashboard. *Done when* imported report shows on the dashboard; export test checks no names, hour-rounded timestamps.
-- [ ] data/golden_set.csv (30+ questions) + `scripts/evaluate.py` (baseline vs navigator). *Done when* summary.md and results.csv are written with access leaks = 0.
+- [x] Query logging + feedback. *Done when* each ask writes a query_logs row.
+- [x] Anonymised export + Publisher import + dashboard. *Done when* imported report shows on the dashboard; export test checks no names, hour-rounded timestamps.
+- [x] data/golden_set.csv (30+ questions) + `scripts/evaluate.py` (baseline vs navigator). *Done when* summary.md and results.csv are written with access leaks = 0.
 
 ## M9 Packaging and polish
 - [ ] Offline end-to-end ask test with pytest-socket (only 127.0.0.1). *Done when* test passes.
