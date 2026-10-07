@@ -1,110 +1,214 @@
-"""Plain data classes shared by every MixUp module."""
+"""Plain data classes and constants shared by every module.
+
+Dates are datetime.date (or None). Status / relation / jurisdiction values are
+the upper-case strings from the build guide (section 6).
+"""
 
 from __future__ import annotations
 
 from dataclasses import dataclass, field
+from datetime import date
+from typing import Any
 
-# Document status values
-STATUS_IN_FORCE = "in_force"  # current rule; answers should come from these
-STATUS_SUPERSEDED = "superseded"  # replaced by a newer document
-STATUS_RECORD = "record"  # minutes, reports: records, not rules
-STATUSES = (STATUS_IN_FORCE, STATUS_SUPERSEDED, STATUS_RECORD)
+# --- Document status (guide 6.1) ---------------------------------------------
+IN_FORCE = "IN_FORCE"
+AMENDED = "AMENDED"
+CANCELLED = "CANCELLED"
+ONE_OFF = "ONE_OFF"
+UNKNOWN = "UNKNOWN"
+STATUSES = (IN_FORCE, AMENDED, CANCELLED, ONE_OFF, UNKNOWN)
+DEFAULT_STATUSES = (IN_FORCE, AMENDED, UNKNOWN)  # what normal search may use
+HISTORICAL_STATUSES = (CANCELLED, ONE_OFF)  # only with "Include historical"
 
-# Document types (doc_type values)
-DOC_TYPES = ("circular", "guideline", "sop", "policy", "minutes", "report", "other")
+# (BM label, EN label, colour). Status is always shown as text + colour.
+STATUS_LABELS = {
+    IN_FORCE: ("Berkuat kuasa", "In force", "green"),
+    AMENDED: ("Dipinda", "Amended", "orange"),
+    CANCELLED: ("Dibatalkan", "Cancelled", "red"),
+    ONE_OFF: ("Sekali sahaja", "One-off", "gray"),
+    UNKNOWN: ("Belum disahkan", "Not verified", "gray"),
+}
 
-# Edge relations in the version graph
-REL_SUPERSEDES = "supersedes"  # (new, old): new replaces old
-REL_REFERENCES = "references"  # (a, b): a mentions b
-REL_CONFLICTS = "conflicts"  # (a, b): both in force but disagree
-REL_DISCUSSED_IN = "discussed_in"  # (doc, minutes): doc was discussed in the minutes
-RELATIONS = (REL_SUPERSEDES, REL_REFERENCES, REL_CONFLICTS, REL_DISCUSSED_IN)
+# --- Relations (guide 6.2) -------------------------------------------------
+CANCELS = "CANCELS"
+SUPERSEDES = "SUPERSEDES"
+AMENDS = "AMENDS"
+REFERENCES = "REFERENCES"
+RELATION_TYPES = (CANCELS, SUPERSEDES, AMENDS, REFERENCES)
+KILLING_RELATIONS = (CANCELS, SUPERSEDES)
+
+# --- Jurisdiction ------------------------------------------------------------
+FEDERAL = "FEDERAL"
+SARAWAK = "SARAWAK"
+FEDERAL_SARAWAK = "FEDERAL_SARAWAK"  # federal circular adopted / published for Sarawak
+JURISDICTION_UNKNOWN = "UNKNOWN"
+JURISDICTIONS = (FEDERAL, SARAWAK, FEDERAL_SARAWAK, JURISDICTION_UNKNOWN)
+JURISDICTION_LABELS = {
+    FEDERAL: ("Persekutuan", "Federal"),
+    SARAWAK: ("Negeri Sarawak", "Sarawak State"),
+    FEDERAL_SARAWAK: ("Persekutuan (diterima pakai Sarawak)", "Federal (adopted by Sarawak)"),
+    JURISDICTION_UNKNOWN: ("Tidak diketahui", "Unknown"),
+}
+
+
+def jurisdiction_matches(doc_jurisdiction: str, user_jurisdiction: str) -> bool:
+    """True when a document's jurisdiction is the 'home' one for the user."""
+    if user_jurisdiction == SARAWAK:
+        return doc_jurisdiction in (SARAWAK, FEDERAL_SARAWAK)
+    return doc_jurisdiction in (FEDERAL, FEDERAL_SARAWAK)
+
+
+# --- Classification tiers (guide 7.8) ------------------------------------------
+TERBUKA, TERHAD, SULIT = 0, 1, 2
+CLASSIFICATION_LABELS = {TERBUKA: ("Terbuka", "Open"), TERHAD: ("Terhad", "Restricted"), SULIT: ("Sulit", "Confidential")}
+
+# --- Other enumerations ------------------------------------------------------------
+SERIES = ("PP", "SPP", "SE", "PEKELILING_PERBENDAHARAAN", "STATE", "OTHER")
+DOC_TYPES = ("circular", "guideline", "sop", "minutes", "report")
+ROLES = ("OFFICER", "POLICY_OWNER", "ADMIN")
 
 
 @dataclass
-class DocMeta:
-    """One row of data/manifest.csv: what we know about a document."""
+class Document:
+    """One circular / guideline / SOP / minutes / report (a row of metadata.csv)."""
 
-    doc_id: str  # short stable id, e.g. "PK-2024-01"
-    title: str
-    doc_type: str = "other"  # one of DOC_TYPES
+    doc_id: str
+    circular_no: str = ""  # normalised, e.g. "SPP 1/2023"
+    series: str = "OTHER"
+    title: str = ""
     issuer: str = ""
-    number: str = ""  # official number, e.g. "Bil. 1/2024"
-    date_issued: str = ""  # ISO date "YYYY-MM-DD"
-    language: str = "en"  # "ms" | "en" | "mixed"
-    status: str = STATUS_IN_FORCE  # one of STATUSES
-    supersedes: list[str] = field(default_factory=list)  # doc_ids this one replaces
-    superseded_by: str = ""  # doc_id that replaced this one ("" if none)
-    file: str = ""  # path relative to data/, e.g. "documents/PK-2024-01.md"
-    source_url: str = ""  # empty for fictional sample documents
-    summary: str = ""
-    tags: list[str] = field(default_factory=list)  # topic tags, e.g. ["travel-claims"]
+    doc_type: str = "circular"
+    jurisdiction: str = JURISDICTION_UNKNOWN
+    cluster: str = ""
+    issue_date: date | None = None
+    effective_date: date | None = None
+    expiry_date: date | None = None
+    one_off: bool = False
+    classification_level: int = TERBUKA
+    language: str = "ms"  # ms | en | mixed
+    applicability: str = ""  # from the PEMAKAIAN section
+    source_url: str = ""
+    file: str = ""  # path relative to data/ (or runtime/ for uploads)
+    status: str = UNKNOWN  # computed by status.py
+    status_reason: str = ""
+    origin: str = "base"  # base | upload
+    page_count: int = 0
+    ocr_pages: list[int] = field(default_factory=list)  # pages with < 30 chars ("needs OCR")
 
     @property
-    def is_superseded(self) -> bool:
-        return self.status == STATUS_SUPERSEDED
+    def label(self) -> str:
+        """Circular number if known, else the doc_id (for chips and notices)."""
+        return self.circular_no or self.doc_id
 
     @property
-    def short_label(self) -> str:
-        """Number if we have one, otherwise the doc_id. Good for chips and notices."""
-        return self.number or self.doc_id
+    def is_current(self) -> bool:
+        return self.status in (IN_FORCE, AMENDED, UNKNOWN)
 
 
 @dataclass
 class Page:
-    """A page (PDF) or section (Markdown/TXT/DOCX) of a document."""
+    """A PDF page, or a section of a .md/.txt/.docx file (section number = page number)."""
 
     doc_id: str
-    page_no: int  # 1-based page number, or section number for text files
+    page_no: int  # 1-based
     text: str
     heading: str = ""
+    needs_ocr: bool = False
 
 
 @dataclass
 class Chunk:
-    """A searchable piece of a page (about 900 characters)."""
+    """A clause-aware searchable passage."""
 
-    chunk_id: str  # "<doc_id>#p<page_no>-c<i>"
+    chunk_id: str  # "<doc_id>#<chunk_index>"
     doc_id: str
-    page_no: int
-    heading: str
+    chunk_index: int
+    clause_ref: str  # "4.2", or the section name for un-numbered text
+    breadcrumb: str  # "SPP 1/2023 > PEMAKAIAN > 4.1"
+    section: str  # "PEMAKAIAN" ("" before the first heading)
+    page_start: int
+    page_end: int
     text: str
 
 
 @dataclass
-class SearchHit:
-    """A search result: the chunk, its score and the document it came from."""
+class Relation:
+    """An edge in the supersession graph: source_doc --relation_type--> target_doc."""
+
+    relation_id: str
+    source_doc_id: str
+    target_doc_id: str = ""  # "" when the referenced circular is not in the corpus
+    target_ref_text: str = ""  # e.g. "Surat Pekeliling Perkhidmatan Bilangan 3 Tahun 2019"
+    relation_type: str = REFERENCES
+    scope: str = "whole"  # "whole" or "clauses: 4.2"
+    effective_date: date | None = None
+    evidence_text: str = ""
+    evidence_page: int | None = None
+    confidence: float = 1.0
+    verified: bool = False  # only verified relations change a status
+    origin: str = "csv"  # csv | extracted | manual
+    rejected: bool = False  # rejected in the verification queue
+
+
+@dataclass
+class User:
+    """A demo profile (no passwords; production would use MyGovUC / agency SSO)."""
+
+    user_id: str
+    name: str
+    role: str = "OFFICER"
+    clearance_level: int = TERBUKA
+    jurisdiction: str = FEDERAL
+    grade: str = ""
+    scheme: str = ""
+
+
+@dataclass
+class Hit:
+    """A search result: the chunk, its document and scores."""
 
     chunk: Chunk
+    doc: Document
     score: float
-    doc: DocMeta
+    rank: int = 0  # 1-based
+    coverage: float = 0.0  # share of the question's keywords found (0..1)
+    matched: list[str] = field(default_factory=list)  # query tokens found
 
 
 @dataclass
 class Citation:
-    """A source label like [S1] mapped back to a document location."""
+    """[S#] label mapped back to circular + clause + page."""
 
     label: str  # "S1"
     doc_id: str
+    circular_no: str
     title: str
-    number: str
-    page_no: int
-    heading: str
-    snippet: str
+    clause_ref: str
+    page: int
     status: str
+    status_reason: str
+    jurisdiction: str
+    snippet: str
+    chunk_id: str = ""
 
 
 @dataclass
-class Answer:
-    """What Ask MixUp returns to the UI."""
+class AskResponse:
+    """What ask.ask() returns to the UI and to the evaluation harness."""
 
-    text: str  # answer text containing [S1]-style labels
+    answer: str
+    language: str = "ms"
+    confidence: str = "LOW"  # HIGH | MEDIUM | LOW
     citations: list[Citation] = field(default_factory=list)
-    language: str = "en"  # language of the question: "ms" | "en" | "mixed"
-    confidence: str = "low"  # "high" | "medium" | "low" | "none"
-    notices: list[str] = field(default_factory=list)  # e.g. supersession notices
-    mode: str = "offline"  # "ai" | "offline"
-    hits: list[SearchHit] = field(default_factory=list)  # retrieved passages
-    # superseded->latest pairs relevant to this answer, for "What changed?" buttons:
-    # [{"old_id": "PK-2021-03", "new_id": "PK-2024-01"}, ...]
-    related_versions: list[dict] = field(default_factory=list)
+    primary_status: str = ""
+    excluded: list[dict] = field(default_factory=list)  # [{doc_id, circular_no, status_reason}]
+    jurisdiction_conflict: bool = False
+    comparison: dict | None = None  # the other jurisdiction's rule, if any
+    answerable: bool = False
+    mode: str = "navigator"  # navigator | baseline
+    query_log_id: str = ""
+    warnings: list[str] = field(default_factory=list)
+    retrieved: list[Hit] = field(default_factory=list)  # ranked passages (for evaluation)
+    latency_ms: int = 0
+    llm_mode: str = "offline"  # offline | ollama | bedrock (what produced the text)
+    extra: dict[str, Any] = field(default_factory=dict)

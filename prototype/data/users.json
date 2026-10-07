@@ -1,0 +1,7 @@
+[
+  {"user_id": "FED-T0", "name": "Pegawai Persekutuan (Terbuka)", "role": "OFFICER", "clearance_level": 0, "jurisdiction": "FEDERAL", "grade": "N29", "scheme": "Pembantu Tadbir"},
+  {"user_id": "SWK-T0", "name": "Pegawai Sarawak (Terbuka)", "role": "OFFICER", "clearance_level": 0, "jurisdiction": "SARAWAK", "grade": "N29", "scheme": "Pembantu Tadbir"},
+  {"user_id": "FED-T1", "name": "Pegawai Terhad", "role": "OFFICER", "clearance_level": 1, "jurisdiction": "FEDERAL", "grade": "N41", "scheme": "Pegawai Tadbir"},
+  {"user_id": "OWNER", "name": "Pemilik Dasar", "role": "POLICY_OWNER", "clearance_level": 1, "jurisdiction": "FEDERAL", "grade": "M48", "scheme": "Pegawai Tadbir dan Diplomatik"},
+  {"user_id": "ADMIN", "name": "Admin", "role": "ADMIN", "clearance_level": 2, "jurisdiction": "FEDERAL", "grade": "F44", "scheme": "Pegawai Teknologi Maklumat"}
+]

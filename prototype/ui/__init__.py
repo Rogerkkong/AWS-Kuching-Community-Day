@@ -1,1 +1,1 @@
-"""Streamlit UI modules. Each tab module exposes render(ctx)."""
+"""Streamlit tabs. Each module exposes render(ctx: ui.common.UIContext)."""

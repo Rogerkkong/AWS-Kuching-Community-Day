@@ -1,0 +1,470 @@
+[
+ {
+  "ms": "tuntutan",
+  "en": "claim"
+ },
+ {
+  "ms": "elaun",
+  "en": "allowance"
+ },
+ {
+  "ms": "perjalanan",
+  "en": "travel"
+ },
+ {
+  "ms": "perbatuan",
+  "en": "mileage"
+ },
+ {
+  "ms": "elaun perbatuan",
+  "en": "mileage allowance"
+ },
+ {
+  "ms": "tuntutan perjalanan",
+  "en": "travel claim"
+ },
+ {
+  "ms": "cuti",
+  "en": "leave"
+ },
+ {
+  "ms": "cuti rehat",
+  "en": "annual leave"
+ },
+ {
+  "ms": "cuti penjagaan anak",
+  "en": "child care leave"
+ },
+ {
+  "ms": "penjagaan anak",
+  "en": "child care"
+ },
+ {
+  "ms": "anak",
+  "en": "child"
+ },
+ {
+  "ms": "cuti sakit",
+  "en": "sick leave"
+ },
+ {
+  "ms": "pekeliling",
+  "en": "circular"
+ },
+ {
+  "ms": "surat pekeliling",
+  "en": "circular letter"
+ },
+ {
+  "ms": "surat edaran",
+  "en": "circular letter"
+ },
+ {
+  "ms": "garis panduan",
+  "en": "guideline"
+ },
+ {
+  "ms": "bekerja dari rumah",
+  "en": "work from home"
+ },
+ {
+  "ms": "bekerja dari rumah",
+  "en": "wfh"
+ },
+ {
+  "ms": "bekerja secara hibrid",
+  "en": "hybrid work"
+ },
+ {
+  "ms": "hibrid",
+  "en": "hybrid"
+ },
+ {
+  "ms": "kelulusan",
+  "en": "approval"
+ },
+ {
+  "ms": "diluluskan",
+  "en": "approved"
+ },
+ {
+  "ms": "tarikh kuat kuasa",
+  "en": "effective date"
+ },
+ {
+  "ms": "berkuat kuasa",
+  "en": "in force"
+ },
+ {
+  "ms": "dibatalkan",
+  "en": "cancelled"
+ },
+ {
+  "ms": "membatalkan",
+  "en": "cancels"
+ },
+ {
+  "ms": "dipinda",
+  "en": "amended"
+ },
+ {
+  "ms": "pindaan",
+  "en": "amendment"
+ },
+ {
+  "ms": "menggantikan",
+  "en": "replaces"
+ },
+ {
+  "ms": "digantikan",
+  "en": "replaced"
+ },
+ {
+  "ms": "tempoh",
+  "en": "deadline"
+ },
+ {
+  "ms": "tempoh",
+  "en": "period"
+ },
+ {
+  "ms": "tarikh akhir",
+  "en": "deadline"
+ },
+ {
+  "ms": "hari",
+  "en": "days"
+ },
+ {
+  "ms": "hari bekerja",
+  "en": "working days"
+ },
+ {
+  "ms": "seminggu",
+  "en": "per week"
+ },
+ {
+  "ms": "minggu",
+  "en": "week"
+ },
+ {
+  "ms": "tahun",
+  "en": "year"
+ },
+ {
+  "ms": "bulan",
+  "en": "month"
+ },
+ {
+  "ms": "kadar",
+  "en": "rate"
+ },
+ {
+  "ms": "sekilometer",
+  "en": "per kilometre"
+ },
+ {
+  "ms": "sekilometer",
+  "en": "per km"
+ },
+ {
+  "ms": "kenderaan sendiri",
+  "en": "own vehicle"
+ },
+ {
+  "ms": "kenderaan",
+  "en": "vehicle"
+ },
+ {
+  "ms": "resit",
+  "en": "receipt"
+ },
+ {
+  "ms": "resit digital",
+  "en": "digital receipt"
+ },
+ {
+  "ms": "borang",
+  "en": "form"
+ },
+ {
+  "ms": "borang kertas",
+  "en": "paper form"
+ },
+ {
+  "ms": "e-tuntutan",
+  "en": "e-claim"
+ },
+ {
+  "ms": "sistem",
+  "en": "system"
+ },
+ {
+  "ms": "permohonan",
+  "en": "application"
+ },
+ {
+  "ms": "memohon",
+  "en": "apply"
+ },
+ {
+  "ms": "dikemukakan",
+  "en": "submitted"
+ },
+ {
+  "ms": "mengemukakan",
+  "en": "submit"
+ },
+ {
+  "ms": "ketua jabatan",
+  "en": "head of department"
+ },
+ {
+  "ms": "penyelia",
+  "en": "supervisor"
+ },
+ {
+  "ms": "pegawai",
+  "en": "officer"
+ },
+ {
+  "ms": "penjawat awam",
+  "en": "civil servant"
+ },
+ {
+  "ms": "perkhidmatan awam",
+  "en": "public service"
+ },
+ {
+  "ms": "persekutuan",
+  "en": "federal"
+ },
+ {
+  "ms": "negeri",
+  "en": "state"
+ },
+ {
+  "ms": "negeri sarawak",
+  "en": "sarawak state"
+ },
+ {
+  "ms": "pemakaian",
+  "en": "applicability"
+ },
+ {
+  "ms": "tujuan",
+  "en": "purpose"
+ },
+ {
+  "ms": "latar belakang",
+  "en": "background"
+ },
+ {
+  "ms": "pembatalan",
+  "en": "cancellation"
+ },
+ {
+  "ms": "kelayakan",
+  "en": "eligibility"
+ },
+ {
+  "ms": "layak",
+  "en": "eligible"
+ },
+ {
+  "ms": "syarat",
+  "en": "condition"
+ },
+ {
+  "ms": "gred",
+  "en": "grade"
+ },
+ {
+  "ms": "skim perkhidmatan",
+  "en": "service scheme"
+ },
+ {
+  "ms": "tempoh percubaan",
+  "en": "probation"
+ },
+ {
+  "ms": "disahkan dalam perkhidmatan",
+  "en": "confirmed in service"
+ },
+ {
+  "ms": "bawa ke hadapan",
+  "en": "carry forward"
+ },
+ {
+  "ms": "dibawa ke hadapan",
+  "en": "carried forward"
+ },
+ {
+  "ms": "membawa ke hadapan",
+  "en": "carry forward"
+ },
+ {
+  "ms": "baki cuti",
+  "en": "leave balance"
+ },
+ {
+  "ms": "waktu teras",
+  "en": "core hours"
+ },
+ {
+  "ms": "pejabat",
+  "en": "office"
+ },
+ {
+  "ms": "darurat",
+  "en": "emergency"
+ },
+ {
+  "ms": "sementara",
+  "en": "temporary"
+ },
+ {
+  "ms": "sekali sahaja",
+  "en": "one-off"
+ },
+ {
+  "ms": "awan",
+  "en": "cloud"
+ },
+ {
+  "ms": "pengkomputeran awan",
+  "en": "cloud computing"
+ },
+ {
+  "ms": "pusat data",
+  "en": "data centre"
+ },
+ {
+  "ms": "pusat data",
+  "en": "data center"
+ },
+ {
+  "ms": "maklumat",
+  "en": "information"
+ },
+ {
+  "ms": "data peribadi",
+  "en": "personal data"
+ },
+ {
+  "ms": "terbuka",
+  "en": "public"
+ },
+ {
+  "ms": "terhad",
+  "en": "restricted"
+ },
+ {
+  "ms": "sulit",
+  "en": "confidential"
+ },
+ {
+  "ms": "rahsia",
+  "en": "secret"
+ },
+ {
+  "ms": "pengelasan",
+  "en": "classification"
+ },
+ {
+  "ms": "klasifikasi",
+  "en": "classification"
+ },
+ {
+  "ms": "keselamatan",
+  "en": "security"
+ },
+ {
+  "ms": "audit dalaman",
+  "en": "internal audit"
+ },
+ {
+  "ms": "siasatan",
+  "en": "investigation"
+ },
+ {
+  "ms": "mesyuarat",
+  "en": "meeting"
+ },
+ {
+  "ms": "minit",
+  "en": "minutes"
+ },
+ {
+  "ms": "keputusan",
+  "en": "decision"
+ },
+ {
+  "ms": "tindakan",
+  "en": "action"
+ },
+ {
+  "ms": "hospital",
+  "en": "hospital"
+ },
+ {
+  "ms": "sijil sakit",
+  "en": "medical certificate"
+ },
+ {
+  "ms": "bergaji penuh",
+  "en": "full pay"
+ },
+ {
+  "ms": "kerajaan",
+  "en": "government"
+ },
+ {
+  "ms": "jabatan",
+  "en": "department"
+ },
+ {
+  "ms": "agensi",
+  "en": "agency"
+ },
+ {
+  "ms": "kontraktor",
+  "en": "contractor"
+ },
+ {
+  "ms": "swasta",
+  "en": "private"
+ },
+ {
+  "ms": "peraturan",
+  "en": "rule"
+ },
+ {
+  "ms": "dasar",
+  "en": "policy"
+ },
+ {
+  "ms": "terkini",
+  "en": "latest"
+ },
+ {
+  "ms": "baharu",
+  "en": "new"
+ },
+ {
+  "ms": "lama",
+  "en": "old"
+ },
+ {
+  "ms": "pelan kesinambungan",
+  "en": "continuity plan"
+ },
+ {
+  "ms": "pemulihan",
+  "en": "recovery"
+ },
+ {
+  "ms": "sandaran",
+  "en": "backup"
+ }
+]

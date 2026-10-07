@@ -1,6 +1,9 @@
-"""MixUp: bilingual, version-aware search and Q&A over government documents.
+"""Pekeliling Navigator by Team MixUp: a bilingual, validity-aware policy assistant.
 
-The package is split into small modules. See ARCHITECTURE.md for the map.
+"Never cite a cancelled circular again." / "Jangan rujuk pekeliling yang telah dibatalkan lagi."
 """
 
-__version__ = "0.1.0"
+PRODUCT_NAME = "Pekeliling Navigator"
+TEAM = "Team MixUp"
+TAGLINE_EN = "Never cite a cancelled circular again."
+TAGLINE_MS = "Jangan rujuk pekeliling yang telah dibatalkan lagi."

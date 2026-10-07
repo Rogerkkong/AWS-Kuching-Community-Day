@@ -1,253 +1,235 @@
-"""Keyword search (BM25) with bilingual query expansion and optional Titan embeddings.
+"""Lexical retrieval for FAST MODE: BM25 + BM/EN glossary expansion + exact
+circular-number boost, with the validity, clearance and jurisdiction filters
+applied in code (replaces pgvector + full-text search from the guide).
 
-BM25 is a classic ranking formula: a chunk scores higher when it contains rare
-query words, several times, and is not too long. We implement it ourselves (no
-extra dependencies) and add:
-  * query expansion BM<->EN (textutil.expand_query)
-  * a small boost when query words hit the document's title/number/tags
-  * optional hybrid scoring with Amazon Titan Text Embeddings V2 (MIXUP_EMBEDDINGS=on)
+    hits = search(store, user, "tempoh tuntutan perjalanan")              # in-force only
+    hits = search(store, user, q, statuses=None)                            # every status (baseline / excluded list)
+    hits = search(store, user, q, prefer_jurisdiction="SARAWAK")            # boost the user's jurisdiction
+    hits = search(store, user, q, jurisdictions={"FEDERAL"})                # hard filter
+
+The clearance filter is ALWAYS applied (access.visible_doc_ids).
 """
 
 from __future__ import annotations
 
-import hashlib
-import json
 import math
 from collections import Counter
-from pathlib import Path
 from typing import Iterable
 
-from .config import Settings
-from .models import STATUS_RECORD, STATUS_SUPERSEDED, Chunk, DocMeta, SearchHit
-from .textutil import detect_language, glossary_terms, tokenize
+from . import access
+from .models import DEFAULT_STATUSES, Chunk, Citation, Document, Hit, User, jurisdiction_matches
+from .textutil import _phrase_in, detect_language, find_refs, load_glossary, normalize, snippet, tokenize
 
 K1 = 1.5
 B = 0.75
-EXPANSION_WEIGHT = 0.6  # glossary translations count a bit less than the user's own words
-RECORD_PRIOR = 0.85  # minutes/reports rank slightly below rules (circulars, guidelines, SOPs)
+EXPANSION_WEIGHT = 0.6  # glossary translations count less than the user's own words (same language)
+CIRCULAR_BOOST = 2.0  # x score when the query names the document's circular number
+JURISDICTION_BOOST = 1.3  # x score for the user's preferred jurisdiction
+RECORD_PRIOR = 0.85  # minutes / reports rank a little below rules
 
 
-class BedrockEmbedder:
-    """Amazon Titan Text Embeddings V2 via boto3 (an AWS model, not Claude).
+class BM25Index:
+    """In-memory BM25 over chunks. Index text = title + circular no + breadcrumb + text."""
 
-    Embeddings are cached on disk by text hash, so each chunk is embedded once.
-    """
-
-    def __init__(self, settings: Settings, client=None):
-        import boto3
-
-        self.model_id = settings.embed_model
-        if client is None:
-            session = boto3.Session(profile_name=settings.aws_profile) if settings.aws_profile else boto3.Session()
-            client = session.client("bedrock-runtime", region_name=settings.aws_region)
-        self._client = client
-        self._cache_file = Path(settings.cache_dir) / "embeddings" / f"{self.model_id.replace(':', '_')}.json"
-        try:
-            self._cache: dict[str, list[float]] = json.loads(self._cache_file.read_text(encoding="utf-8"))
-        except (OSError, ValueError):
-            self._cache = {}
-        self._dirty = False
-
-    def embed(self, text: str) -> list[float]:
-        key = hashlib.sha256(text.encode("utf-8")).hexdigest()[:32]
-        if key not in self._cache:
-            resp = self._client.invoke_model(
-                modelId=self.model_id,
-                body=json.dumps({"inputText": text[:8000], "dimensions": 512, "normalize": True}),
-            )
-            self._cache[key] = json.loads(resp["body"].read())["embedding"]
-            self._dirty = True
-        return self._cache[key]
-
-    def save(self) -> None:
-        if not self._dirty:
-            return
-        try:
-            self._cache_file.parent.mkdir(parents=True, exist_ok=True)
-            self._cache_file.write_text(json.dumps(self._cache), encoding="utf-8")
-            self._dirty = False
-        except OSError:
-            pass
-
-
-def make_embedder(settings: Settings):
-    """Return a BedrockEmbedder when MIXUP_EMBEDDINGS=on and not offline, else None."""
-    if not settings.embeddings or settings.offline:
-        return None
-    try:
-        return BedrockEmbedder(settings)
-    except Exception:
-        return None
-
-
-class Index:
-    """In-memory search index over chunks.
-
-    docs is the shared {doc_id: DocMeta} dict (status changes are seen immediately).
-    embedder is optional: any object with .embed(text) -> list[float].
-    """
-
-    def __init__(self, chunks: Iterable[Chunk], docs: dict[str, DocMeta], embedder=None):
-        self.docs = docs
-        self.embedder = embedder
-        self.embed_error: str | None = None
+    def __init__(self) -> None:
         self.chunks: list[Chunk] = []
-        self._tfs: list[Counter] = []
-        self._lens: list[int] = []
-        self._df: Counter = Counter()
-        self._avgdl = 1.0
-        self._vectors: list = []  # numpy arrays when embeddings are on
-        self.add_chunks(chunks)
+        self.tfs: list[Counter] = []
+        self.lens: list[int] = []
+        self.df: Counter = Counter()
+        self.avgdl = 1.0
 
-    # -- building ---------------------------------------------------------------
+    @staticmethod
+    def index_text(chunk: Chunk, doc: Document | None) -> str:
+        title = f"{doc.title} {doc.circular_no}" if doc else ""
+        return f"{title}\n{chunk.breadcrumb}\n{chunk.text}"
 
-    def _field_text(self, chunk: Chunk) -> str:
-        doc = self.docs.get(chunk.doc_id)
-        title = doc.title if doc else ""
-        return f"{title}\n{chunk.heading}\n{chunk.text}"
-
-    def _meta_tokens(self, doc: DocMeta | None) -> set[str]:
-        if doc is None:
-            return set()
-        return set(tokenize(f"{doc.title} {doc.number} {doc.doc_id} {' '.join(doc.tags)}"))
-
-    def add_chunks(self, chunks: Iterable[Chunk]) -> None:
-        """Add chunks (e.g. from an uploaded document) and refresh statistics."""
-        new = list(chunks)
-        for chunk in new:
-            tf = Counter(tokenize(self._field_text(chunk)))
+    def add(self, chunks: Iterable[Chunk], docs: dict[str, Document]) -> None:
+        """Add chunks and refresh statistics."""
+        for chunk in chunks:
+            tf = Counter(tokenize(self.index_text(chunk, docs.get(chunk.doc_id))))
             self.chunks.append(chunk)
-            self._tfs.append(tf)
-            self._lens.append(sum(tf.values()))
-            self._df.update(tf.keys())
-        self._avgdl = (sum(self._lens) / len(self._lens)) if self._lens else 1.0
-        if self.embedder is not None and new:
-            self._embed_chunks(new)
+            self.tfs.append(tf)
+            self.lens.append(sum(tf.values()))
+            self.df.update(tf.keys())
+        self.avgdl = (sum(self.lens) / len(self.lens)) if self.lens else 1.0
 
-    def _embed_chunks(self, chunks: list[Chunk]) -> None:
-        try:
-            import numpy as np
+    def remove_doc(self, doc_id: str) -> None:
+        """Drop every chunk of one document (used when an upload is replaced)."""
+        keep = [i for i, c in enumerate(self.chunks) if c.doc_id != doc_id]
+        if len(keep) == len(self.chunks):
+            return
+        self.chunks = [self.chunks[i] for i in keep]
+        self.tfs = [self.tfs[i] for i in keep]
+        self.lens = [self.lens[i] for i in keep]
+        self.df = Counter()
+        for tf in self.tfs:
+            self.df.update(tf.keys())
+        self.avgdl = (sum(self.lens) / len(self.lens)) if self.lens else 1.0
 
-            for chunk in chunks:
-                self._vectors.append(np.asarray(self.embedder.embed(self._field_text(chunk)), dtype=float))
-            if hasattr(self.embedder, "save"):
-                self.embedder.save()
-        except Exception as exc:  # embeddings are a bonus; BM25 keeps working
-            self.embed_error = f"Embeddings disabled: {type(exc).__name__}"
-            self.embedder = None
-            self._vectors = []
-
-    # -- scoring ----------------------------------------------------------------
-
-    def _bm25(self, i: int, q_weights: dict[str, float]) -> float:
-        """BM25 score of chunk i for weighted query tokens {token: weight}."""
-        tf = self._tfs[i]
+    def bm25(self, i: int, weights: dict[str, float]) -> float:
+        """BM25 score of chunk i for weighted query tokens."""
+        tf = self.tfs[i]
         n = len(self.chunks)
-        dl = self._lens[i] or 1
+        dl = self.lens[i] or 1
         score = 0.0
-        for tok, weight in q_weights.items():
+        for tok, weight in weights.items():
             f = tf.get(tok, 0)
             if not f:
                 continue
-            df = self._df.get(tok, 0)
+            df = self.df.get(tok, 0)
             idf = math.log(1 + (n - df + 0.5) / (df + 0.5))
-            score += weight * idf * (f * (K1 + 1)) / (f + K1 * (1 - B + B * dl / self._avgdl))
+            score += weight * idf * (f * (K1 + 1)) / (f + K1 * (1 - B + B * dl / self.avgdl))
         return score
 
-    @staticmethod
-    def _query_weights(query: str, expand: bool, translation_weight: float) -> dict[str, float]:
-        """User's words get weight 1.0; glossary translations get translation_weight."""
-        weights = {tok: 1.0 for tok in tokenize(query)}
-        if expand:
-            for tok in tokenize(" ".join(glossary_terms(query))):
-                weights.setdefault(tok, translation_weight)
-        return weights
 
-    def search(
-        self,
-        queries: str | list[str],
-        k: int = 8,
-        include_superseded: bool = True,
-        doc_ids: Iterable[str] | None = None,
-        doc_types: Iterable[str] | None = None,
-        expand: bool = True,
-    ) -> list[SearchHit]:
-        """Return the top-k chunks for one query (or the best score over several queries).
+def build_index(chunks: Iterable[Chunk], docs: dict[str, Document]) -> BM25Index:
+    index = BM25Index()
+    index.add(chunks, docs)
+    return index
 
-        include_superseded=False hides superseded documents.
-        doc_ids / doc_types restrict the search to some documents.
-        expand=True adds BM<->EN glossary translations to each query.
-        """
-        if isinstance(queries, str):
-            queries = [queries]
-        allowed_ids = set(doc_ids) if doc_ids is not None else None
-        allowed_types = set(doc_types) if doc_types is not None else None
 
-        candidates = []
-        for i, chunk in enumerate(self.chunks):
-            doc = self.docs.get(chunk.doc_id)
-            if doc is None:
+def query_terms(query: str, glossary=None) -> tuple[dict[str, float], dict[str, set[str]]]:
+    """Weighted tokens for a query, and for each user token the set of tokens that
+    count as 'found' (itself + glossary translations), used for coverage.
+
+    glossary=None loads data/glossary.json; glossary=[] disables expansion.
+    """
+    if glossary is None:
+        glossary = load_glossary()
+    q = normalize(query)
+    user_tokens = list(dict.fromkeys(tokenize(query)))
+    weights = {tok: 1.0 for tok in user_tokens}
+    equivalents = {tok: {tok} for tok in user_tokens}
+    for en, ms in glossary:
+        for src, dst in ((en, ms), (ms, en)):
+            if _phrase_in(src, q) and not _phrase_in(dst, q):
+                dst_tokens = tokenize(dst)
+                for tok in dst_tokens:
+                    weights.setdefault(tok, EXPANSION_WEIGHT)
+                for stok in tokenize(src):
+                    if stok in equivalents:
+                        equivalents[stok].update(dst_tokens)
+    return weights, equivalents
+
+
+def search(
+    store,
+    user: User | None,
+    query: str,
+    *,
+    k: int = 10,
+    statuses: Iterable[str] | None = DEFAULT_STATUSES,
+    jurisdictions: Iterable[str] | None = None,
+    prefer_jurisdiction: str | None = None,
+    cluster: str | None = None,
+    doc_types: Iterable[str] | None = None,
+    doc_ids: Iterable[str] | None = None,
+    expand: bool = True,
+    extra_queries: Iterable[str] = (),
+    max_per_doc: int | None = None,
+) -> list[Hit]:
+    """Top-k Hits for a query.
+
+    statuses: allowed document statuses (None = all, e.g. baseline or excluded list).
+    jurisdictions: hard filter; prefer_jurisdiction: soft boost ("FEDERAL"/"SARAWAK").
+    extra_queries: rewritten queries (e.g. from QUERY_REWRITE); best score per chunk wins.
+    """
+    index: BM25Index = store.index
+    allowed_docs = access.visible_docs(store, user)  # clearance filter: always on
+    statuses = set(statuses) if statuses is not None else None
+    jurisdictions = set(jurisdictions) if jurisdictions is not None else None
+    doc_types = set(doc_types) if doc_types is not None else None
+    doc_ids = set(doc_ids) if doc_ids is not None else None
+
+    candidates = []
+    for i, chunk in enumerate(index.chunks):
+        doc = allowed_docs.get(chunk.doc_id)
+        if doc is None:
+            continue
+        if statuses is not None and doc.status not in statuses:
+            continue
+        if jurisdictions is not None and doc.jurisdiction not in jurisdictions:
+            continue
+        if cluster and doc.cluster != cluster:
+            continue
+        if doc_types is not None and doc.doc_type not in doc_types:
+            continue
+        if doc_ids is not None and doc.doc_id not in doc_ids:
+            continue
+        candidates.append(i)
+    if not candidates:
+        return []
+
+    glossary = getattr(store, "glossary", None)
+    queries = [q for q in [query, *extra_queries] if q and q.strip()]
+    refs = {r["circular_no"] for q in queries for r in find_refs(q)}
+    _, equivalents = query_terms(query, glossary if expand else [])
+
+    best: dict[int, float] = {}
+    for q in queries:
+        weights, _ = query_terms(q, glossary if expand else [])
+        if not weights:
+            continue
+        cross = {t: 1.0 for t in weights}  # translations count fully for the other language
+        q_lang = detect_language(q)
+        for i in candidates:
+            doc = allowed_docs[index.chunks[i].doc_id]
+            is_cross = q_lang in ("ms", "en") and doc.language in ("ms", "en") and doc.language != q_lang
+            s = index.bm25(i, cross if is_cross else weights)
+            if doc.circular_no and doc.circular_no in refs:
+                s = s * CIRCULAR_BOOST + 1.0  # exact circular-number match
+            if s <= 0:
                 continue
-            if not include_superseded and doc.status == STATUS_SUPERSEDED:
-                continue
-            if allowed_ids is not None and doc.doc_id not in allowed_ids:
-                continue
-            if allowed_types is not None and doc.doc_type not in allowed_types:
-                continue
-            candidates.append(i)
-        if not candidates:
-            return []
+            if prefer_jurisdiction and jurisdiction_matches(doc.jurisdiction, prefer_jurisdiction):
+                s *= JURISDICTION_BOOST
+            if doc.doc_type in ("minutes", "report"):
+                s *= RECORD_PRIOR
+            if s > best.get(i, 0.0):
+                best[i] = s
 
-        best: dict[int, float] = {}
-        for query in queries:
-            # Translations matter fully for a document in the other language
-            # (English question, Malay circular) and a bit less otherwise.
-            q_lang = detect_language(query)
-            same_lang = self._query_weights(query, expand, EXPANSION_WEIGHT)
-            cross_lang = self._query_weights(query, expand, 1.0)
-            if not same_lang:
-                continue
-            q_set = set(same_lang)
-            raw = {}
-            meta_cache: dict[str, set[str]] = {}
-            for i in candidates:
-                doc = self.docs[self.chunks[i].doc_id]
-                is_cross = q_lang in ("ms", "en") and doc.language in ("ms", "en") and doc.language != q_lang
-                s = self._bm25(i, cross_lang if is_cross else same_lang)
-                if s <= 0:
-                    continue
-                if doc.doc_id not in meta_cache:
-                    meta_cache[doc.doc_id] = self._meta_tokens(doc)
-                overlap = len(q_set & meta_cache[doc.doc_id]) / len(q_set)
-                s *= 1 + 0.3 * overlap  # title / number / tags match
-                if doc.status == STATUS_RECORD:
-                    s *= RECORD_PRIOR
-                raw[i] = s
-            scores = self._hybrid(query, raw, candidates)
-            for i, s in scores.items():
-                if s > best.get(i, 0.0):
-                    best[i] = s
+    ranked = sorted(best.items(), key=lambda kv: kv[1], reverse=True)
+    hits: list[Hit] = []
+    per_doc: Counter = Counter()
+    for i, score in ranked:
+        chunk = index.chunks[i]
+        if max_per_doc and per_doc[chunk.doc_id] >= max_per_doc:
+            continue
+        per_doc[chunk.doc_id] += 1
+        tf = index.tfs[i]
+        found = [t for t, eq in equivalents.items() if any(e in tf for e in eq)]
+        coverage = len(found) / len(equivalents) if equivalents else 0.0
+        hits.append(
+            Hit(
+                chunk=chunk,
+                doc=allowed_docs[chunk.doc_id],
+                score=round(score, 4),
+                rank=len(hits) + 1,
+                coverage=round(coverage, 3),
+                matched=found,
+            )
+        )
+        if len(hits) >= k:
+            break
+    return hits
 
-        ranked = sorted(best.items(), key=lambda kv: kv[1], reverse=True)[:k]
-        return [SearchHit(chunk=self.chunks[i], score=round(s, 4), doc=self.docs[self.chunks[i].doc_id]) for i, s in ranked]
 
-    def _hybrid(self, query: str, bm25: dict[int, float], candidates: list[int]) -> dict[int, float]:
-        """Blend BM25 with cosine similarity when embeddings are available."""
-        if self.embedder is None or len(self._vectors) != len(self.chunks):
-            return bm25
-        try:
-            import numpy as np
+def top_docs(hits: list[Hit], n: int = 5) -> list[str]:
+    """Distinct doc_ids in rank order (for Recall@5 / MRR)."""
+    return list(dict.fromkeys(h.doc.doc_id for h in hits))[:n]
 
-            q = np.asarray(self.embedder.embed(query), dtype=float)
-            top = max(bm25.values()) if bm25 else 1.0
-            out = {}
-            for i in candidates:
-                v = self._vectors[i]
-                cos = float(np.dot(q, v) / ((np.linalg.norm(q) * np.linalg.norm(v)) or 1.0))
-                out[i] = 0.5 * (bm25.get(i, 0.0) / top) + 0.5 * max(cos, 0.0)
-            return {i: s for i, s in out.items() if s > 0.05}
-        except Exception as exc:
-            self.embed_error = f"Embeddings disabled: {type(exc).__name__}"
-            self.embedder = None
-            return bm25
 
+def citation_from_hit(label: str, hit: Hit, max_chars: int = 300) -> Citation:
+    """Build the Citation shown under an answer for passage [label] (e.g. 'S1')."""
+    return Citation(
+        label=label,
+        doc_id=hit.doc.doc_id,
+        circular_no=hit.doc.label,
+        title=hit.doc.title,
+        clause_ref=hit.chunk.clause_ref,
+        page=hit.chunk.page_start,
+        status=hit.doc.status,
+        status_reason=hit.doc.status_reason,
+        jurisdiction=hit.doc.jurisdiction,
+        snippet=snippet(hit.chunk.text, max_chars),
+        chunk_id=hit.chunk.chunk_id,
+    )
