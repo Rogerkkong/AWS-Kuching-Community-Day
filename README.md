@@ -1,5 +1,6 @@
-<<<<<<< HEAD
 # MixUp Navigator
+
+**Group 11 - AWS Kuching Community Day**
 
 Offline, bilingual (Bahasa Melayu / English), validity-aware policy assistant for Malaysian civil servants,
 delivered as a desktop app. It answers only from rules that are **currently in force** (plus dated meeting
@@ -119,8 +120,3 @@ See `SPEC.md` (specification), `TASKS.md` (milestones), `DECISIONS.md` (design c
 ## Demo script
 
 See the "Demo script" section at the end of `PROGRESS.md` once M9 is complete.
-=======
-# AWS-Kuching-Community-Day
-Group 11 - MixUp Navigator
-
->>>>>>> aa46ae37cff0913f2d4ce96e57f7f91066893f48
