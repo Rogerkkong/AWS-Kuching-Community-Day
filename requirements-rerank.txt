@@ -1,0 +1,2 @@
+# Optional: CrossEncoder reranker BAAI/bge-reranker-v2-m3 (~2.3 GB model download on first use)
+sentence-transformers>=3.0

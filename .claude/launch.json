@@ -1,0 +1,7 @@
+{
+  "version": "0.0.1",
+  "configurations": [
+    { "name": "officer-fake", "runtimeExecutable": ".venv/Scripts/python.exe", "runtimeArgs": ["scripts/dev_server.py", "8765"], "port": 8765 },
+    { "name": "publisher-fake", "runtimeExecutable": ".venv/Scripts/python.exe", "runtimeArgs": ["scripts/dev_server.py", "8766", "--mode", "publisher"], "port": 8766 }
+  ]
+}
