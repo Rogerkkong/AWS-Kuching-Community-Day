@@ -1,0 +1,793 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500;600&family=IBM+Plex+Serif:wght@400;600&display=swap" rel="stylesheet">
+<style>
+*{box-sizing:border-box}
+body{margin:0;background:#D6D2CA;font-family:'IBM Plex Sans',system-ui,sans-serif;color:#1A1D21;-webkit-font-smoothing:antialiased}
+a{color:#23408E}a:hover{color:#142A68}
+button{font-family:inherit}
+input::placeholder{color:#8B9097}
+@keyframes pn-blink{0%,50%{opacity:1}51%,100%{opacity:0}}
+@keyframes pn-pulse{0%{opacity:.35}50%{opacity:1}100%{opacity:.35}}
+</style>
+</helmet>
+<div style="min-height:100vh;display:flex;align-items:safe center;justify-content:safe center;padding:40px;overflow:auto">
+<div data-screen-label="Pekeliling Navigator window" style="flex:none;width:1440px;height:900px;background:#F6F4F0;border-radius:10px;overflow:hidden;box-shadow:0 30px 80px rgba(30,28,24,.28),0 2px 6px rgba(30,28,24,.15);display:flex;flex-direction:column;border:1px solid #B9B4AA;position:relative">
+
+  <div style="height:34px;flex:none;background:#E9E6E0;border-bottom:1px solid #D6D1C7;display:flex;align-items:center;justify-content:space-between;padding-left:14px;font-size:12px;color:#3D4247">
+    <div style="display:flex;align-items:center;gap:10px">
+      <div style="width:16px;height:16px;border-radius:3px;background:#16232A;color:#F6F4F0;font:600 8px 'IBM Plex Mono',monospace;display:flex;align-items:center;justify-content:center">PN</div>
+      <span style="font-weight:500">Pekeliling Navigator</span>
+      <span style="color:#7A7F86">— {{ modeLabel }}</span>
+    </div>
+    <div style="display:flex;height:100%">
+      <div style="width:46px;display:flex;align-items:center;justify-content:center;color:#3D4247">—</div>
+      <div style="width:46px;display:flex;align-items:center;justify-content:center;color:#3D4247">▢</div>
+      <div style="width:46px;display:flex;align-items:center;justify-content:center;color:#3D4247" style-hover="background:#C42B1C;color:#fff">✕</div>
+    </div>
+  </div>
+
+  <div style="flex:1;display:flex;min-height:0">
+
+    <aside style="width:236px;flex:none;background:#16232A;color:#E6EBED;display:flex;flex-direction:column;position:relative">
+      <div style="padding:22px 20px 18px;display:flex;flex-direction:column;gap:2px">
+        <div style="font:600 19px/1.1 'IBM Plex Serif',serif;letter-spacing:-.01em">Pekeliling</div>
+        <div style="font:500 11px 'IBM Plex Mono',monospace;letter-spacing:.14em;color:#8FA3AB;text-transform:uppercase">Navigator</div>
+      </div>
+      <div style="margin:0 16px 18px;display:grid;grid-template-columns:1fr 1fr;background:#0E181D;border-radius:7px;padding:3px;gap:3px">
+        <sc-for list="{{ modeBtns }}" as="m" hint-placeholder-count="2">
+          <button onClick="{{ m.onClick }}" style="border:0;border-radius:5px;padding:7px 0;font-size:12px;font-weight:500;cursor:pointer;background:{{ m.bg }};color:{{ m.fg }}">{{ m.label }}</button>
+        </sc-for>
+      </div>
+      <nav style="display:flex;flex-direction:column;gap:2px;padding:0 10px">
+        <sc-for list="{{ navItems }}" as="n" hint-placeholder-count="3">
+          <button onClick="{{ n.onClick }}" style="border:0;text-align:left;display:flex;align-items:center;gap:12px;padding:10px 12px;border-radius:6px;cursor:pointer;font-size:14px;background:{{ n.bg }};color:{{ n.fg }};font-weight:{{ n.weight }}" style-hover="background:#22343C">
+            <span style="font:500 11px 'IBM Plex Mono',monospace;color:#6F858E;width:12px">{{ n.key }}</span>
+            <span style="flex:1">{{ n.label }}</span>
+            <sc-if value="{{ n.hasBadge }}" hint-placeholder-val="{{ false }}"><span style="min-width:20px;height:20px;border-radius:10px;background:#E0A93A;color:#16232A;font:600 11px 'IBM Plex Mono',monospace;display:flex;align-items:center;justify-content:center;padding:0 6px">{{ n.badge }}</span></sc-if>
+          </button>
+        </sc-for>
+      </nav>
+      <div style="flex:1"></div>
+      <div style="margin:0 16px 12px;padding:12px;border-radius:8px;background:#1E2F36;display:flex;flex-direction:column;gap:4px">
+        <div style="display:flex;align-items:center;gap:8px;font-size:13px;font-weight:600"><span style="width:8px;height:8px;border-radius:4px;background:#7CC59A"></span>Luar talian</div>
+        <div style="font-size:12px;line-height:1.45;color:#A9B7BD">Dokumen dan soalan kekal di komputer ini.</div>
+      </div>
+      <button onClick="{{ toggleProfileMenu }}" style="border:0;border-top:1px solid #253740;background:transparent;color:inherit;display:flex;align-items:center;gap:10px;padding:14px 16px;text-align:left;cursor:pointer" style-hover="background:#1C2B32">
+        <div style="width:34px;height:34px;border-radius:17px;background:#E6D3A8;color:#16232A;font-weight:600;font-size:12px;display:flex;align-items:center;justify-content:center;flex:none">{{ profile.init }}</div>
+        <div style="flex:1;min-width:0">
+          <div style="font-size:13px;font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">{{ profile.name }}</div>
+          <div style="font-size:11px;color:#9AACB3">{{ profile.jur }} · {{ profile.clrLabel }}</div>
+        </div>
+        <span style="color:#6F858E;font-size:11px">▲</span>
+      </button>
+      <sc-if value="{{ profileMenuOpen }}" hint-placeholder-val="{{ false }}">
+        <div style="position:absolute;left:12px;bottom:70px;width:300px;background:#FFFFFF;color:#1A1D21;border-radius:10px;box-shadow:0 18px 40px rgba(0,0,0,.28);padding:8px;z-index:20">
+          <div style="padding:8px 10px 6px;font:500 11px 'IBM Plex Mono',monospace;letter-spacing:.08em;color:#6B7178;text-transform:uppercase">Tukar pegawai (demo)</div>
+          <sc-for list="{{ profileOptions }}" as="p" hint-placeholder-count="2">
+            <button onClick="{{ p.onClick }}" style="width:100%;border:0;background:{{ p.bg }};border-radius:7px;display:flex;gap:10px;align-items:center;padding:10px;text-align:left;cursor:pointer" style-hover="background:#F1EEE8">
+              <div style="width:32px;height:32px;border-radius:16px;background:#E6D3A8;font-weight:600;font-size:12px;display:flex;align-items:center;justify-content:center;flex:none">{{ p.init }}</div>
+              <div style="flex:1">
+                <div style="font-size:13px;font-weight:600">{{ p.name }}</div>
+                <div style="font-size:12px;color:#5D636B">{{ p.role }}</div>
+                <div style="font-size:12px;color:#5D636B">{{ p.jur }} · Klearans {{ p.clrLabel }}</div>
+              </div>
+            </button>
+          </sc-for>
+          <div style="padding:8px 10px 4px;font-size:11px;line-height:1.4;color:#7A7F86">Prototaip: tiada kata laluan. Versi pengeluaran menggunakan log masuk agensi.</div>
+        </div>
+      </sc-if>
+    </aside>
+
+    <main style="flex:1;min-width:0;display:flex;flex-direction:column;position:relative">
+      <header style="height:64px;flex:none;display:flex;align-items:center;justify-content:space-between;padding:0 28px;border-bottom:1px solid #E2DED6;background:#F6F4F0">
+        <div style="display:flex;flex-direction:column;gap:2px">
+          <div style="font-size:18px;font-weight:600;letter-spacing:-.01em">{{ screenTitle }}</div>
+          <div style="font-size:12px;color:#5D636B">{{ screenSub }}</div>
+        </div>
+        <div style="display:flex;align-items:center;gap:10px">
+          <div style="display:flex;align-items:center;gap:8px;height:32px;padding:0 12px;border:1px solid #DAD5CB;border-radius:16px;font-size:12px;background:#FFFFFF">
+            <span style="color:#6B7178">Bidang kuasa</span><span style="font-weight:600">{{ profile.jur }}</span>
+          </div>
+          <button onClick="{{ toggleNotif }}" style="position:relative;height:32px;padding:0 12px;border:1px solid #DAD5CB;border-radius:16px;background:#FFFFFF;font-size:12px;font-weight:500;cursor:pointer;display:flex;align-items:center;gap:8px" style-hover="border-color:#9EA3A9">
+            Notifikasi
+            <sc-if value="{{ hasUnread }}" hint-placeholder-val="{{ false }}"><span style="min-width:18px;height:18px;border-radius:9px;background:#A3271F;color:#fff;font:600 10px 'IBM Plex Mono',monospace;display:flex;align-items:center;justify-content:center;padding:0 5px">{{ unread }}</span></sc-if>
+          </button>
+        </div>
+      </header>
+
+      <sc-if value="{{ notifOpen }}" hint-placeholder-val="{{ false }}">
+        <div style="position:absolute;right:28px;top:58px;width:400px;background:#FFFFFF;border-radius:10px;box-shadow:0 18px 44px rgba(30,28,24,.22);border:1px solid #E2DED6;z-index:30;overflow:hidden">
+          <div style="padding:14px 16px;border-bottom:1px solid #EEEAE3;display:flex;justify-content:space-between;align-items:center">
+            <span style="font-weight:600;font-size:14px">Notifikasi</span>
+            <span style="font-size:12px;color:#5D636B">Dijana semasa pek dipasang</span>
+          </div>
+          <sc-for list="{{ notifs }}" as="nt" hint-placeholder-count="2">
+            <button onClick="{{ nt.onClick }}" style="width:100%;border:0;border-bottom:1px solid #F0ECE6;background:#FFFFFF;text-align:left;padding:14px 16px;display:flex;flex-direction:column;gap:4px;cursor:pointer" style-hover="background:#FAF8F4">
+              <span style="font:500 11px 'IBM Plex Mono',monospace;letter-spacing:.06em;text-transform:uppercase;color:{{ nt.color }}">{{ nt.kind }}</span>
+              <span style="font-size:13px;font-weight:600;line-height:1.4">{{ nt.title }}</span>
+              <span style="font-size:12px;color:#5D636B;line-height:1.4">{{ nt.body }}</span>
+            </button>
+          </sc-for>
+        </div>
+      </sc-if>
+
+      <sc-if value="{{ showBanner }}" hint-placeholder-val="{{ false }}">
+        <div style="flex:none;display:flex;align-items:center;gap:14px;padding:10px 28px;background:#FBF1DA;border-bottom:1px solid #EBD9AE;font-size:13px">
+          <span style="font-weight:600;color:#6A4600">Kemas kini tersedia</span>
+          <span style="color:#4A4030;flex:1">Pek Terbuka v4 · 1 pekeliling baharu, 1 perubahan status · ditandatangani oleh penerbit</span>
+          <button onClick="{{ goUpdates }}" style="border:1px solid #C9A85E;background:#FFFFFF;border-radius:6px;padding:6px 12px;font-size:12px;font-weight:600;cursor:pointer;color:#4A3500">Lihat kemas kini</button>
+        </div>
+      </sc-if>
+
+      <sc-if value="{{ isAsk }}" hint-placeholder-val="{{ true }}">
+        <div data-screen-label="Tanya" style="flex:1;min-height:0;display:grid;grid-template-columns:minmax(0,1fr) 440px">
+          <div style="display:flex;flex-direction:column;min-height:0;border-right:1px solid #E2DED6">
+            <div style="flex:1;overflow:auto;padding:32px 40px">
+              <div style="max-width:720px;margin:0 auto;display:flex;flex-direction:column;gap:22px">
+
+                <sc-if value="{{ notAsked }}" hint-placeholder-val="{{ true }}">
+                  <div style="padding-top:70px;display:flex;flex-direction:column;gap:18px">
+                    <div style="font:600 32px/1.2 'IBM Plex Serif',serif;letter-spacing:-.015em;text-wrap:pretty;max-width:560px">Tanya tentang peraturan yang berkuat kuasa hari ini.</div>
+                    <div style="font-size:15px;line-height:1.6;color:#4C5258;max-width:560px;text-wrap:pretty">Jawapan hanya diambil daripada pekeliling yang masih terpakai, dengan petikan perenggan dan halaman. Pekeliling yang dibatalkan akan dinyatakan, bukan dipetik.</div>
+                    <div style="display:flex;flex-direction:column;gap:8px;margin-top:12px">
+                      <div style="font:500 11px 'IBM Plex Mono',monospace;letter-spacing:.08em;color:#6B7178;text-transform:uppercase">Cuba</div>
+                      <sc-for list="{{ suggestions }}" as="sg" hint-placeholder-count="3">
+                        <button onClick="{{ sg.onClick }}" style="text-align:left;border:1px solid #E0DBD1;background:#FFFFFF;border-radius:8px;padding:12px 14px;font-size:14px;cursor:pointer;display:flex;justify-content:space-between;gap:12px;color:#1A1D21" style-hover="border-color:#23408E">
+                          <span>{{ sg.q }}</span><span style="font-size:12px;color:#7A7F86;white-space:nowrap">{{ sg.tag }}</span>
+                        </button>
+                      </sc-for>
+                    </div>
+                  </div>
+                </sc-if>
+
+                <sc-if value="{{ asked }}" hint-placeholder-val="{{ false }}">
+                  <div style="display:flex;flex-direction:column;gap:6px">
+                    <div style="font:500 11px 'IBM Plex Mono',monospace;letter-spacing:.08em;color:#6B7178;text-transform:uppercase">Soalan</div>
+                    <div style="font:600 22px/1.35 'IBM Plex Serif',serif;text-wrap:pretty">{{ question }}</div>
+                  </div>
+                  <div style="display:flex;align-items:center;gap:8px;font-size:12px;color:#5D636B">
+                    <span style="width:7px;height:7px;border-radius:4px;background:{{ phaseDot }};animation:{{ phaseAnim }}"></span>
+                    <span>{{ statusLine }}</span>
+                  </div>
+
+                  <sc-if value="{{ showExcluded }}" hint-placeholder-val="{{ false }}">
+                    <div style="border:1px solid #E8CFCB;background:#FCF3F1;border-radius:8px;padding:12px 14px;display:flex;flex-direction:column;gap:8px">
+                      <div style="display:flex;justify-content:space-between;align-items:center">
+                        <span style="font-size:13px;font-weight:600;color:#7E1F18">Dikecualikan daripada jawapan</span>
+                        <button onClick="{{ openLineage }}" style="border:0;background:transparent;color:#23408E;font-size:12px;font-weight:600;cursor:pointer;padding:0">Lihat salasilah →</button>
+                      </div>
+                      <sc-for list="{{ excluded }}" as="ex" hint-placeholder-count="2">
+                        <div style="display:flex;gap:10px;align-items:baseline;font-size:13px">
+                          <span style="font:600 12px 'IBM Plex Mono',monospace;color:#1A1D21;min-width:84px">{{ ex.no }}</span>
+                          <span style="color:#5A2A25">{{ ex.reason }}</span>
+                        </div>
+                      </sc-for>
+                    </div>
+                  </sc-if>
+
+                  <sc-if value="{{ showAnswer }}" hint-placeholder-val="{{ false }}">
+                    <div style="background:#FFFFFF;border:1px solid #E2DED6;border-radius:10px;padding:20px 22px;display:flex;flex-direction:column;gap:14px">
+                      <div style="display:flex;justify-content:space-between;align-items:center">
+                        <span style="font:500 11px 'IBM Plex Mono',monospace;letter-spacing:.08em;color:#6B7178;text-transform:uppercase">{{ answerLabel }}</span>
+                        <sc-if value="{{ isFinalHero }}" hint-placeholder-val="{{ false }}"><span style="font-size:12px;font-weight:600;color:#1E6B41;background:#E2F0E7;padding:3px 8px;border-radius:4px">Keyakinan: Tinggi</span></sc-if>
+                      </div>
+                      <p style="margin:0;font-size:16px;line-height:1.7;color:#1A1D21;text-wrap:pretty"><sc-for list="{{ tokens }}" as="tk"><sc-if value="{{ tk.isText }}">{{ tk.text }}</sc-if><sc-if value="{{ tk.isCite }}"><button onClick="{{ tk.onClick }}" style="border:1px solid #B9C3E3;background:#EEF1FA;color:#23408E;font:600 11px 'IBM Plex Mono',monospace;border-radius:4px;padding:1px 5px;margin:0 2px;cursor:pointer;vertical-align:2px" style-hover="background:#DCE3F5">{{ tk.id }}</button></sc-if></sc-for><sc-if value="{{ isStreaming }}"><span style="display:inline-block;width:8px;height:17px;background:#23408E;vertical-align:-3px;margin-left:2px;animation:pn-blink 1s infinite"></span></sc-if></p>
+                      <sc-if value="{{ isFinalHero }}" hint-placeholder-val="{{ false }}">
+                        <div style="display:flex;justify-content:space-between;align-items:center;padding-top:12px;border-top:1px solid #F0ECE6;font-size:12px;color:#5D636B">
+                          <span style="font-family:'IBM Plex Mono',monospace">Sumber 0.8 s · lengkap 14.6 s · qwen3:4b · CPU</span>
+                          <div style="display:flex;gap:6px">
+                            <sc-for list="{{ feedbackBtns }}" as="fb" hint-placeholder-count="2">
+                              <button onClick="{{ fb.onClick }}" style="border:1px solid {{ fb.border }};background:{{ fb.bg }};border-radius:6px;padding:5px 10px;font-size:12px;cursor:pointer;color:#1A1D21">{{ fb.label }}</button>
+                            </sc-for>
+                          </div>
+                        </div>
+                      </sc-if>
+                    </div>
+                  </sc-if>
+
+                  <sc-if value="{{ showCompare }}" hint-placeholder-val="{{ false }}">
+                    <div style="display:flex;flex-direction:column;gap:10px">
+                      <div style="display:flex;justify-content:space-between;align-items:baseline">
+                        <span style="font-size:14px;font-weight:600">Peraturan berbeza mengikut bidang kuasa</span>
+                        <span style="font-size:12px;color:#5D636B">Peraturan anda dipaparkan dahulu</span>
+                      </div>
+                      <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px">
+                        <sc-for list="{{ compareCols }}" as="cc" hint-placeholder-count="2">
+                          <div style="border:1px solid {{ cc.border }};background:{{ cc.bg }};border-radius:8px;padding:14px;display:flex;flex-direction:column;gap:6px">
+                            <div style="display:flex;justify-content:space-between;font-size:12px"><span style="font-weight:600">{{ cc.label }}</span><span style="color:#5D636B">{{ cc.tag }}</span></div>
+                            <div style="font:600 24px 'IBM Plex Serif',serif">{{ cc.rule }}</div>
+                            <div style="font-size:12px;color:#4C5258">{{ cc.detail }}</div>
+                            <div style="font:500 12px 'IBM Plex Mono',monospace;color:#23408E">{{ cc.doc }}</div>
+                          </div>
+                        </sc-for>
+                      </div>
+                    </div>
+                  </sc-if>
+                </sc-if>
+              </div>
+            </div>
+
+            <div style="flex:none;padding:14px 40px 18px;border-top:1px solid #E2DED6;background:#F6F4F0">
+              <div style="max-width:720px;margin:0 auto;display:flex;flex-direction:column;gap:10px">
+                <div style="display:flex;gap:8px;background:#FFFFFF;border:1px solid #D3CEC4;border-radius:10px;padding:6px 6px 6px 14px;align-items:center" style-focus="border-color:#23408E">
+                  <input value="{{ draft }}" onChange="{{ onDraft }}" onKeyDown="{{ onKey }}" placeholder="Tanya dalam Bahasa Melayu atau English…" style="flex:1;border:0;outline:none;font:inherit;font-size:15px;background:transparent;color:#1A1D21;padding:8px 0">
+                  <button onClick="{{ submit }}" style="border:0;background:#23408E;color:#FFFFFF;border-radius:7px;padding:10px 18px;font-size:13px;font-weight:600;cursor:pointer" style-hover="background:#1A3175">Tanya</button>
+                </div>
+                <div style="display:flex;justify-content:space-between;align-items:center;font-size:12px;color:#5D636B">
+                  <button onClick="{{ toggleHist }}" style="border:0;background:transparent;display:flex;align-items:center;gap:8px;cursor:pointer;padding:0;font-size:12px;color:#3D4247">
+                    <span style="width:28px;height:16px;border-radius:8px;background:{{ histBg }};position:relative;display:inline-block"><span style="position:absolute;top:2px;left:{{ histKnob }};width:12px;height:12px;border-radius:6px;background:#FFFFFF"></span></span>
+                    Sertakan pekeliling sejarah (dibatalkan)
+                  </button>
+                  <span>Mencari dalam {{ packCountLabel }}</span>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <div style="display:flex;flex-direction:column;min-height:0;background:#EFECE6">
+            <div style="flex:none;display:flex;gap:4px;padding:12px 16px 0;border-bottom:1px solid #DDD8CE">
+              <sc-for list="{{ tabs }}" as="tb" hint-placeholder-count="3">
+                <button onClick="{{ tb.onClick }}" style="border:0;background:transparent;padding:10px 12px;font-size:13px;cursor:pointer;color:{{ tb.fg }};font-weight:{{ tb.weight }};border-bottom:2px solid {{ tb.line }};margin-bottom:-1px">{{ tb.label }}</button>
+              </sc-for>
+            </div>
+            <div style="flex:1;overflow:auto;padding:16px">
+
+              <sc-if value="{{ rightEmpty }}" hint-placeholder-val="{{ true }}">
+                <div style="height:100%;display:flex;align-items:center;justify-content:center;text-align:center;padding:40px;font-size:13px;line-height:1.6;color:#6B7178">{{ rightEmptyText }}</div>
+              </sc-if>
+
+              <sc-if value="{{ showSourcesList }}" hint-placeholder-val="{{ false }}">
+                <div style="display:flex;flex-direction:column;gap:10px">
+                  <sc-for list="{{ sources }}" as="s" hint-placeholder-count="3">
+                    <div style="background:#FFFFFF;border:1px solid {{ s.border }};border-radius:9px;padding:14px;display:flex;flex-direction:column;gap:8px">
+                      <div style="display:flex;align-items:center;gap:8px">
+                        <span style="font:600 11px 'IBM Plex Mono',monospace;background:#EEF1FA;color:#23408E;border-radius:4px;padding:2px 6px">{{ s.id }}</span>
+                        <span style="font:600 13px 'IBM Plex Mono',monospace">{{ s.doc }}</span>
+                        <span style="flex:1"></span>
+                        <span style="display:flex;align-items:center;gap:5px;font-size:11px;font-weight:600;color:{{ s.fg }};background:{{ s.bg }};padding:3px 8px;border-radius:4px"><span style="width:6px;height:6px;border-radius:3px;background:{{ s.dot }}"></span>{{ s.status }}</span>
+                      </div>
+                      <div style="font-size:13px;font-weight:600;line-height:1.35">{{ s.title }}</div>
+                      <div style="font:400 11px 'IBM Plex Mono',monospace;color:#5D636B">{{ s.crumb }} · hlm. {{ s.page }} · {{ s.jur }}</div>
+                      <div style="font:400 13px/1.55 'IBM Plex Serif',serif;color:#33383D">“{{ s.text }}”</div>
+                      <div style="display:flex;justify-content:space-between;align-items:center">
+                        <span style="font-size:11px;color:#7E1F18">{{ s.reason }}</span>
+                        <button onClick="{{ s.onOpen }}" style="border:0;background:transparent;color:#23408E;font-size:12px;font-weight:600;cursor:pointer;padding:0">Buka halaman →</button>
+                      </div>
+                    </div>
+                  </sc-for>
+                </div>
+              </sc-if>
+
+              <sc-if value="{{ showViewer }}" hint-placeholder-val="{{ false }}">
+                <div style="display:flex;flex-direction:column;gap:12px">
+                  <div style="display:flex;justify-content:space-between;align-items:center;font-size:12px">
+                    <span style="font:600 13px 'IBM Plex Mono',monospace">{{ viewer.doc }}</span>
+                    <span style="color:#5D636B">Halaman {{ viewer.page }} daripada {{ viewer.pages }} · PDF asal dalam pek</span>
+                  </div>
+                  <div style="background:#FFFFFF;box-shadow:0 1px 3px rgba(0,0,0,.12),0 8px 24px rgba(0,0,0,.06);padding:34px 32px 40px;min-height:540px;display:flex;flex-direction:column;gap:14px;font-family:'IBM Plex Serif',serif;color:#22262A">
+                    <div style="text-align:center;font-size:10px;letter-spacing:.12em;color:#6B7178">{{ viewer.issuer }}</div>
+                    <div style="text-align:center;font-size:12px;font-weight:600;letter-spacing:.04em">{{ viewer.header }}</div>
+                    <div style="height:1px;background:#D9D5CD;margin:4px 0"></div>
+                    <div style="font-size:12px;font-weight:600">{{ viewer.heading }}</div>
+                    <sc-for list="{{ viewer.paras }}" as="vp" hint-placeholder-count="3">
+                      <div style="display:grid;grid-template-columns:34px 1fr;font-size:12.5px;line-height:1.65;background:{{ vp.bg }};margin:0 -8px;padding:4px 8px;border-radius:2px">
+                        <span style="font-weight:600">{{ vp.n }}</span><span>{{ vp.t }}</span>
+                      </div>
+                    </sc-for>
+                    <div style="flex:1"></div>
+                    <div style="text-align:center;font-size:10px;color:#8B9097">{{ viewer.page }}</div>
+                  </div>
+                </div>
+              </sc-if>
+
+              <sc-if value="{{ showLineage }}" hint-placeholder-val="{{ false }}">
+                <div style="display:flex;flex-direction:column">
+                  <div style="font-size:12px;color:#5D636B;margin-bottom:12px">Sejarah pindaan · lama ke baharu · hanya hubungan yang disahkan penerbit</div>
+                  <sc-for list="{{ lineage }}" as="ln" hint-placeholder-count="3">
+                    <div style="display:flex;flex-direction:column">
+                      <sc-if value="{{ ln.hasRel }}">
+                        <div style="display:grid;grid-template-columns:20px 1fr;gap:10px;padding:2px 0">
+                          <div style="display:flex;justify-content:center"><div style="width:2px;background:#C9C3B7"></div></div>
+                          <div style="padding:10px 0 12px;display:flex;flex-direction:column;gap:6px">
+                            <span style="font:600 10px 'IBM Plex Mono',monospace;letter-spacing:.1em;color:#5D636B">{{ ln.relLabel }}</span>
+                            <span style="font:400 12px/1.5 'IBM Plex Serif',serif;color:#3D4247">“{{ ln.evidence }}” <span style="font-family:'IBM Plex Mono',monospace;font-size:11px;color:#6B7178">{{ ln.evidenceRef }}</span></span>
+                            <div style="background:#FFFFFF;border:1px solid #E2DED6;border-radius:6px;padding:8px 10px;font-size:12px;line-height:1.5;color:#33383D"><span style="font-weight:600">Apa yang berubah: </span>{{ ln.summary }}</div>
+                          </div>
+                        </div>
+                      </sc-if>
+                      <div style="display:grid;grid-template-columns:20px 1fr;gap:10px;align-items:start">
+                        <div style="display:flex;justify-content:center;padding-top:16px"><div style="width:12px;height:12px;border-radius:6px;background:{{ ln.dot }};box-shadow:0 0 0 3px #EFECE6"></div></div>
+                        <div style="background:#FFFFFF;border:{{ ln.border }};border-radius:9px;padding:12px 14px;display:flex;flex-direction:column;gap:5px">
+                          <div style="display:flex;align-items:center;gap:8px">
+                            <span style="font:600 13px 'IBM Plex Mono',monospace">{{ ln.no }}</span>
+                            <span style="flex:1;font-size:12px;color:#5D636B">{{ ln.date }}</span>
+                            <span style="font-size:11px;font-weight:600;color:{{ ln.fg }};background:{{ ln.bg }};padding:3px 8px;border-radius:4px">{{ ln.status }}</span>
+                          </div>
+                          <div style="font-size:13px;font-weight:600">{{ ln.title }}</div>
+                          <div style="font-size:12px;color:#4C5258">{{ ln.rule }}</div>
+                        </div>
+                      </div>
+                    </div>
+                  </sc-for>
+                </div>
+              </sc-if>
+            </div>
+          </div>
+        </div>
+      </sc-if>
+
+      <sc-if value="{{ isLibrary }}" hint-placeholder-val="{{ false }}">
+        <div data-screen-label="Pekeliling" style="flex:1;overflow:auto;padding:24px 28px;display:flex;flex-direction:column;gap:16px">
+          <div style="display:flex;gap:6px">
+            <sc-for list="{{ libFilters }}" as="lf" hint-placeholder-count="4">
+              <button onClick="{{ lf.onClick }}" style="border:1px solid {{ lf.border }};background:{{ lf.bg }};color:{{ lf.fg }};border-radius:16px;padding:6px 14px;font-size:12px;font-weight:500;cursor:pointer">{{ lf.label }}</button>
+            </sc-for>
+          </div>
+          <div style="background:#FFFFFF;border:1px solid #E2DED6;border-radius:10px;overflow:hidden">
+            <div style="display:grid;grid-template-columns:130px minmax(0,1fr) 120px 150px 110px 90px;gap:16px;padding:11px 18px;border-bottom:1px solid #E2DED6;font:500 11px 'IBM Plex Mono',monospace;letter-spacing:.06em;color:#6B7178;text-transform:uppercase">
+              <span>Nombor</span><span>Tajuk</span><span>Bidang kuasa</span><span>Status</span><span>Tarikh</span><span>Klearans</span>
+            </div>
+            <sc-for list="{{ libRows }}" as="r" hint-placeholder-count="8">
+              <div style="display:grid;grid-template-columns:130px minmax(0,1fr) 120px 150px 110px 90px;gap:16px;padding:13px 18px;border-bottom:1px solid #F0ECE6;align-items:center;font-size:13px;background:{{ r.rowBg }}">
+                <span style="font:600 12px 'IBM Plex Mono',monospace">{{ r.no }}</span>
+                <div style="display:flex;flex-direction:column;gap:2px;min-width:0"><span style="font-weight:500">{{ r.title }}</span><span style="font-size:12px;color:#7E1F18">{{ r.reason }}</span></div>
+                <span style="color:#4C5258">{{ r.jur }}</span>
+                <span style="display:flex"><span style="display:flex;align-items:center;gap:5px;font-size:11px;font-weight:600;color:{{ r.fg }};background:{{ r.bg }};padding:3px 8px;border-radius:4px"><span style="width:6px;height:6px;border-radius:3px;background:{{ r.dot }}"></span>{{ r.status }}</span></span>
+                <span style="color:#4C5258">{{ r.date }}</span>
+                <span style="font-size:12px;color:{{ r.tierFg }};font-weight:{{ r.tierWeight }}">{{ r.tier }}</span>
+              </div>
+            </sc-for>
+          </div>
+          <div style="font-size:12px;color:#6B7178">{{ libFoot }}</div>
+        </div>
+      </sc-if>
+
+      <sc-if value="{{ isUpdates }}" hint-placeholder-val="{{ false }}">
+        <div data-screen-label="Kemas kini" style="flex:1;overflow:auto;padding:24px 28px;display:grid;grid-template-columns:minmax(0,1fr) 380px;gap:20px;align-content:start">
+          <div style="display:flex;flex-direction:column;gap:16px">
+            <div style="background:#FFFFFF;border:1px solid #E2DED6;border-radius:10px;padding:20px 22px;display:flex;flex-direction:column;gap:14px">
+              <div style="display:flex;justify-content:space-between;align-items:flex-start;gap:16px">
+                <div style="display:flex;flex-direction:column;gap:4px">
+                  <span style="font:500 11px 'IBM Plex Mono',monospace;letter-spacing:.08em;color:#6B7178;text-transform:uppercase">Saluran kemas kini</span>
+                  <span style="font:500 13px 'IBM Plex Mono',monospace">\\fs01.jpa.local\pekeliling\packs</span>
+                </div>
+                <sc-if value="{{ updAvailable }}" hint-placeholder-val="{{ true }}">
+                  <button onClick="{{ installUpdate }}" style="border:0;background:#23408E;color:#fff;border-radius:7px;padding:10px 16px;font-size:13px;font-weight:600;cursor:pointer" style-hover="background:#1A3175">Pasang Pek Terbuka v4</button>
+                </sc-if>
+                <sc-if value="{{ updDone }}" hint-placeholder-val="{{ false }}">
+                  <span style="font-size:12px;font-weight:600;color:#1E6B41;background:#E2F0E7;padding:6px 10px;border-radius:5px">Dipasang · v4 aktif</span>
+                </sc-if>
+              </div>
+              <div style="display:flex;flex-direction:column;border-top:1px solid #F0ECE6">
+                <sc-for list="{{ installSteps }}" as="st" hint-placeholder-count="7">
+                  <div style="display:grid;grid-template-columns:24px 1fr auto;gap:10px;align-items:center;padding:9px 0;border-bottom:1px solid #F4F1EC;font-size:13px;color:{{ st.fg }}">
+                    <span style="font:600 13px 'IBM Plex Mono',monospace;color:{{ st.markFg }};animation:{{ st.anim }}">{{ st.mark }}</span>
+                    <span>{{ st.label }}</span>
+                    <span style="font:400 11px 'IBM Plex Mono',monospace;color:#6B7178">{{ st.detail }}</span>
+                  </div>
+                </sc-for>
+              </div>
+              <div style="font-size:12px;color:#5D636B;line-height:1.5">Pek yang diubah suai atau tandatangan tidak sah akan ditolak, dan versi sebelumnya kekal aktif.</div>
+            </div>
+
+            <sc-if value="{{ updDone }}" hint-placeholder-val="{{ false }}">
+              <div style="background:#FFFFFF;border:1px solid #E2DED6;border-radius:10px;padding:20px 22px;display:flex;flex-direction:column;gap:14px">
+                <div style="display:flex;justify-content:space-between;align-items:baseline">
+                  <span style="font:600 18px 'IBM Plex Serif',serif">Apa yang berubah · v3 → v4</span>
+                  <span style="font-size:12px;color:#5D636B">Ringkasan disediakan oleh penerbit</span>
+                </div>
+                <sc-for list="{{ changes }}" as="ch" hint-placeholder-count="3">
+                  <div style="display:grid;grid-template-columns:140px 1fr;gap:16px;padding:12px 0;border-top:1px solid #F0ECE6">
+                    <span style="font:500 11px 'IBM Plex Mono',monospace;letter-spacing:.06em;text-transform:uppercase;color:{{ ch.color }};padding-top:2px">{{ ch.kind }}</span>
+                    <div style="display:flex;flex-direction:column;gap:4px">
+                      <span style="font-size:14px;font-weight:600">{{ ch.title }}</span>
+                      <span style="font-size:13px;line-height:1.55;color:#4C5258">{{ ch.body }}</span>
+                    </div>
+                  </div>
+                </sc-for>
+              </div>
+            </sc-if>
+          </div>
+
+          <div style="display:flex;flex-direction:column;gap:12px">
+            <div style="font:500 11px 'IBM Plex Mono',monospace;letter-spacing:.08em;color:#6B7178;text-transform:uppercase">Pek dipasang</div>
+            <sc-for list="{{ packs }}" as="pk" hint-placeholder-count="2">
+              <div style="background:#FFFFFF;border:1px solid #E2DED6;border-radius:10px;padding:16px;display:flex;flex-direction:column;gap:8px">
+                <div style="display:flex;justify-content:space-between;align-items:center">
+                  <span style="font-size:14px;font-weight:600">{{ pk.name }}</span>
+                  <span style="font:600 12px 'IBM Plex Mono',monospace;color:#23408E">v{{ pk.ver }}</span>
+                </div>
+                <div style="font:400 11px 'IBM Plex Mono',monospace;color:#5D636B;line-height:1.6">{{ pk.file }}<br>{{ pk.meta }}</div>
+                <div style="font-size:12px;color:#4C5258">{{ pk.note }}</div>
+              </div>
+            </sc-for>
+            <sc-if value="{{ packLocked }}" hint-placeholder-val="{{ false }}">
+              <div style="border:1px dashed #C9C3B7;border-radius:10px;padding:16px;font-size:12px;line-height:1.5;color:#5D636B">Pek Terhad tidak dihantar ke peranti ini. Klearans anda: Terbuka.</div>
+            </sc-if>
+          </div>
+        </div>
+      </sc-if>
+
+      <sc-if value="{{ isVerify }}" hint-placeholder-val="{{ false }}">
+        <div data-screen-label="Pengesahan" style="flex:1;overflow:auto;padding:24px 28px;display:flex;flex-direction:column;gap:12px">
+          <div style="font-size:13px;color:#4C5258;max-width:760px;line-height:1.55">Hubungan yang diekstrak secara automatik tidak mengubah status sehingga disahkan. Hanya hubungan yang disahkan disalin ke dalam pek.</div>
+          <sc-for list="{{ verifyItems }}" as="v" hint-placeholder-count="3">
+            <div style="background:#FFFFFF;border:1px solid #E2DED6;border-radius:10px;padding:18px 20px;display:grid;grid-template-columns:minmax(0,1fr) 200px;gap:24px;opacity:{{ v.opacity }}">
+              <div style="display:flex;flex-direction:column;gap:10px">
+                <div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap">
+                  <span style="font:600 14px 'IBM Plex Mono',monospace">{{ v.src }}</span>
+                  <span style="font:600 10px 'IBM Plex Mono',monospace;letter-spacing:.1em;background:#EDEAE4;color:#3D4247;padding:4px 8px;border-radius:4px">{{ v.rel }}</span>
+                  <span style="font:600 14px 'IBM Plex Mono',monospace">{{ v.tgt }}</span>
+                  <span style="font-size:12px;color:#5D636B">{{ v.jur }}</span>
+                </div>
+                <div style="font:400 14px/1.6 'IBM Plex Serif',serif;color:#2B3035;background:#FAF8F4;border-radius:6px;padding:10px 12px">“{{ v.evidence }}”</div>
+                <div style="font:400 11px 'IBM Plex Mono',monospace;color:#6B7178">{{ v.where }} · kesan: {{ v.effect }}</div>
+              </div>
+              <div style="display:flex;flex-direction:column;gap:8px;justify-content:center">
+                <div style="font-size:12px;color:#5D636B">Keyakinan ekstraksi <span style="font-weight:600;color:#1A1D21">{{ v.conf }}</span></div>
+                <sc-if value="{{ v.pending }}">
+                  <button onClick="{{ v.onApprove }}" style="border:0;background:#23408E;color:#fff;border-radius:7px;padding:9px 0;font-size:13px;font-weight:600;cursor:pointer">Sahkan</button>
+                  <button onClick="{{ v.onReject }}" style="border:1px solid #D3CEC4;background:#fff;border-radius:7px;padding:8px 0;font-size:13px;cursor:pointer;color:#1A1D21">Tolak</button>
+                </sc-if>
+                <sc-if value="{{ v.decided }}">
+                  <div style="font-size:13px;font-weight:600;color:{{ v.decColor }}">{{ v.decLabel }}</div>
+                  <button onClick="{{ v.onUndo }}" style="border:0;background:transparent;color:#23408E;font-size:12px;cursor:pointer;padding:0;text-align:left">Batal keputusan</button>
+                </sc-if>
+              </div>
+            </div>
+          </sc-for>
+        </div>
+      </sc-if>
+
+      <sc-if value="{{ isBuild }}" hint-placeholder-val="{{ false }}">
+        <div data-screen-label="Bina pek" style="flex:1;overflow:auto;padding:24px 28px;display:grid;grid-template-columns:minmax(0,1fr) 400px;gap:20px;align-content:start">
+          <div style="display:flex;flex-direction:column;gap:12px">
+            <sc-for list="{{ tiers }}" as="t" hint-placeholder-count="2">
+              <div style="background:#FFFFFF;border:1px solid #E2DED6;border-radius:10px;padding:18px 20px;display:grid;grid-template-columns:minmax(0,1fr) auto;gap:16px;align-items:center">
+                <div style="display:flex;flex-direction:column;gap:5px">
+                  <div style="display:flex;gap:10px;align-items:center"><span style="font-size:15px;font-weight:600">{{ t.name }}</span><span style="font-size:11px;font-weight:600;color:{{ t.fg }};background:{{ t.bg }};padding:3px 8px;border-radius:4px">{{ t.tier }}</span></div>
+                  <div style="font-size:13px;color:#4C5258">{{ t.meta }}</div>
+                  <div style="font:400 11px 'IBM Plex Mono',monospace;color:#6B7178">{{ t.delivery }}</div>
+                </div>
+                <div style="font:600 14px 'IBM Plex Mono',monospace;color:#23408E">{{ t.ver }}</div>
+              </div>
+            </sc-for>
+            <div style="background:#FFFFFF;border:1px solid #E2DED6;border-radius:10px;padding:18px 20px;display:flex;flex-direction:column;gap:6px">
+              <span style="font:500 11px 'IBM Plex Mono',monospace;letter-spacing:.08em;color:#6B7178;text-transform:uppercase">Dimasukkan sejak v3</span>
+              <span style="font-size:13px;line-height:1.6;color:#33383D">1 pekeliling baharu (PP 4/2026) · {{ verifiedCount }} hubungan disahkan · 1 ringkasan perubahan · model pembenaman bge-m3 (1024 dim.)</span>
+            </div>
+          </div>
+          <div style="background:#16232A;color:#E6EBED;border-radius:10px;padding:20px;display:flex;flex-direction:column;gap:14px">
+            <div style="font:600 18px 'IBM Plex Serif',serif">Bina dan tandatangan</div>
+            <div style="display:flex;flex-direction:column">
+              <sc-for list="{{ buildSteps }}" as="b" hint-placeholder-count="6">
+                <div style="display:grid;grid-template-columns:22px 1fr;gap:8px;padding:7px 0;font-size:13px;color:{{ b.fg }};border-bottom:1px solid #22343C">
+                  <span style="font:600 12px 'IBM Plex Mono',monospace;color:{{ b.markFg }};animation:{{ b.anim }}">{{ b.mark }}</span><span>{{ b.label }}</span>
+                </div>
+              </sc-for>
+            </div>
+            <sc-if value="{{ buildIdle }}" hint-placeholder-val="{{ true }}">
+              <button onClick="{{ startBuild }}" style="border:0;background:#E0A93A;color:#16232A;border-radius:7px;padding:11px 0;font-size:14px;font-weight:600;cursor:pointer">Bina pek v4</button>
+            </sc-if>
+            <sc-if value="{{ buildDone }}" hint-placeholder-val="{{ false }}">
+              <div style="font:400 11px/1.6 'IBM Plex Mono',monospace;color:#A9B7BD;background:#0E181D;border-radius:6px;padding:10px;word-break:break-all">sha256 9f2c7a0be41d…3c8e41a<br>sig Ed25519 · kunci peribadi kekal di komputer penerbit</div>
+              <button onClick="{{ publish }}" style="border:0;background:{{ publishBg }};color:#16232A;border-radius:7px;padding:11px 0;font-size:14px;font-weight:600;cursor:pointer">{{ publishLabel }}</button>
+            </sc-if>
+          </div>
+        </div>
+      </sc-if>
+    </main>
+  </div>
+
+  <div style="height:26px;flex:none;background:#E9E6E0;border-top:1px solid #D6D1C7;display:flex;align-items:center;gap:20px;padding:0 14px;font:400 11px 'IBM Plex Mono',monospace;color:#4C5258">
+    <span style="display:flex;align-items:center;gap:6px"><span style="width:6px;height:6px;border-radius:3px;background:#2E8B57"></span>Rangkaian: luar talian</span>
+    <span>Model qwen3:4b · sedia</span>
+    <span>{{ packLine }}</span>
+    <span style="flex:1"></span>
+    <span>API 127.0.0.1:{{ port }} · token sesi aktif</span>
+  </div>
+</div>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props="{&quot;$preview&quot;:{&quot;width&quot;:1520,&quot;height&quot;:980},&quot;startProfile&quot;:{&quot;editor&quot;:&quot;enum&quot;,&quot;options&quot;:[&quot;aminah&quot;,&quot;jason&quot;],&quot;default&quot;:&quot;aminah&quot;,&quot;tsType&quot;:&quot;string&quot;},&quot;streamSpeed&quot;:{&quot;editor&quot;:&quot;range&quot;,&quot;min&quot;:20,&quot;max&quot;:200,&quot;step&quot;:10,&quot;unit&quot;:&quot;ms&quot;,&quot;default&quot;:70,&quot;tsType&quot;:&quot;number&quot;},&quot;autoAsk&quot;:{&quot;editor&quot;:&quot;boolean&quot;,&quot;default&quot;:false,&quot;tsType&quot;:&quot;boolean&quot;}}">
+const ST = {
+  IN_FORCE:{l:'Berkuat kuasa',fg:'#1E6B41',bg:'#E2F0E7',dot:'#2E8B57'},
+  AMENDED:{l:'Dipinda',fg:'#7A4F00',bg:'#FAEDD0',dot:'#C98A0B'},
+  CANCELLED:{l:'Dibatalkan',fg:'#9A241C',bg:'#F7E0DC',dot:'#C0392B'},
+  UNKNOWN:{l:'Belum disahkan',fg:'#50565D',bg:'#ECECEA',dot:'#8A9097'},
+};
+const PROFILES = {
+  aminah:{key:'aminah',name:'Aminah binti Yusof',init:'AY',role:'Pegawai Tadbir dan Diplomatik, M41',jur:'Persekutuan',clr:1,clrLabel:'Terhad'},
+  jason:{key:'jason',name:'Jason anak Ling',init:'JL',role:'Pegawai Tadbir Sarawak, N41 · Kapit',jur:'Sarawak',clr:0,clrLabel:'Terbuka'},
+};
+const LIB = [
+  {no:'PP 4/2026',title:'Pindaan Kemudahan Cuti Kuarantin dan Cuti Rehat',jur:'Persekutuan',st:'IN_FORCE',date:'6 Okt 2026',tier:0,v4:true},
+  {no:'PP 2/2024',title:'Pemberian Cuti Rehat dan Gantian Cuti Rehat',jur:'Persekutuan',st:'IN_FORCE',date:'1 Feb 2024',tier:0},
+  {no:'PAS 4/2023',title:'Cuti Rehat Perkhidmatan Awam Negeri Sarawak',jur:'Sarawak',st:'IN_FORCE',date:'1 Jul 2023',tier:0},
+  {no:'PP 7/2021',title:'Tatacara Permohonan Cuti Melalui HRMIS',jur:'Persekutuan',st:'AMENDED',reason:'Dipinda oleh PP 2/2024',date:'12 Mei 2021',tier:0},
+  {no:'PP 1/2025',title:'Kadar Elaun Perjalanan Dalam Negeri',jur:'Persekutuan',st:'IN_FORCE',date:'2 Jan 2025',tier:0},
+  {no:'PP 9/2019',title:'Kemudahan Cuti Kuarantin',jur:'Persekutuan',st:'UNKNOWN',reason:'Status belum disahkan',date:'3 Sep 2019',tier:0},
+  {no:'PP 3/2018',title:'Cuti Rehat dan Gantian Cuti Rehat',jur:'Persekutuan',st:'CANCELLED',reason:'Dibatalkan oleh PP 2/2024',date:'15 Mac 2018',tier:0},
+  {no:'PAS 6/2016',title:'Kemudahan Cuti Rehat Pegawai Negeri',jur:'Sarawak',st:'CANCELLED',reason:'Dibatalkan oleh PAS 4/2023',date:'4 Apr 2016',tier:0},
+  {no:'SPP 5/2011',title:'Kemudahan Cuti Rehat Pegawai Awam',jur:'Persekutuan',st:'CANCELLED',reason:'Dibatalkan oleh PP 3/2018',date:'1 Jun 2011',tier:0},
+  {no:'T-01/2026',title:'Garis Panduan Pengendalian Fail Terhad (SINTETIK – CONTOH SAHAJA)',jur:'Persekutuan',st:'IN_FORCE',date:'2 Mac 2026',tier:1},
+];
+const TITLES = {}; LIB.forEach(d => TITLES[d.no] = d.title);
+const PAGES = {
+  'PP 2/2024|4.1':{pages:6,heading:'4. KELAYAKAN MEMBAWA KE HADAPAN CUTI REHAT',paras:[
+    {n:'4.1',t:'Cuti rehat yang tidak dihabiskan dalam sesuatu tahun boleh dikumpul dan dibawa ke tahun berikutnya tidak melebihi lima belas (15) hari.'},
+    {n:'4.2',t:'Cuti rehat yang dibawa ke hadapan hendaklah dihabiskan dalam tahun berikutnya atau dikumpul bagi tujuan Gantian Cuti Rehat.'},
+    {n:'4.3',t:'Ketua Jabatan hendaklah memastikan pegawai merancang cuti rehat lebih awal bagi mengelakkan cuti luput pada akhir tahun.'},
+    {n:'4.4',t:'Cuti rehat yang melebihi had di perenggan 4.1 adalah luput dan tidak boleh dituntut dalam apa jua bentuk.'}]},
+  'PP 2/2024|5.2':{pages:6,heading:'5. GANTIAN CUTI REHAT',paras:[
+    {n:'5.1',t:'Pegawai yang bersara atau ditamatkan perkhidmatan layak menerima bayaran tunai sebagai Gantian Cuti Rehat.'},
+    {n:'5.2',t:'Jumlah cuti rehat terkumpul bagi tujuan Gantian Cuti Rehat adalah tidak melebihi 150 hari sepanjang tempoh perkhidmatan.'},
+    {n:'5.3',t:'Kiraan Gantian Cuti Rehat adalah berdasarkan gaji hakiki terakhir pegawai.'}]},
+  'PP 7/2021|3.1':{pages:4,heading:'3. TATACARA PERMOHONAN',paras:[
+    {n:'3.1',t:'Semua permohonan cuti hendaklah dikemukakan melalui modul Cuti HRMIS dan diluluskan oleh Ketua Jabatan atau pegawai yang diturunkan kuasa.'},
+    {n:'3.2',t:'Permohonan hendaklah dikemukakan sekurang-kurangnya tiga (3) hari bekerja sebelum tarikh cuti bermula.'},
+    {n:'3.3',t:'Pegawai yang tiada akses HRMIS boleh mengemukakan borang manual kepada Unit Sumber Manusia.'}]},
+  'PAS 4/2023|3.2':{pages:5,heading:'3. CUTI REHAT DIBAWA KE HADAPAN',paras:[
+    {n:'3.1',t:'Pekeliling ini terpakai kepada semua pegawai Perkhidmatan Awam Negeri Sarawak.'},
+    {n:'3.2',t:'Cuti rehat yang tidak dihabiskan boleh dibawa ke tahun berikutnya tidak melebihi dua puluh (20) hari.'},
+    {n:'3.3',t:'Cuti yang dibawa ke hadapan hendaklah direkodkan dalam sistem cuti Negeri sebelum 31 Januari.'},
+    {n:'3.4',t:'Jumlah cuti rehat terkumpul bagi tujuan Gantian Cuti Rehat tidak melebihi 150 hari.'}]},
+};
+PAGES['PAS 4/2023|3.4'] = PAGES['PAS 4/2023|3.2'];
+const HEADERS = {
+  'PP 2/2024':['JABATAN PERKHIDMATAN AWAM MALAYSIA','PEKELILING PERKHIDMATAN BILANGAN 2 TAHUN 2024'],
+  'PP 7/2021':['JABATAN PERKHIDMATAN AWAM MALAYSIA','PEKELILING PERKHIDMATAN BILANGAN 7 TAHUN 2021'],
+  'PAS 4/2023':['PEJABAT SETIAUSAHA KERAJAAN NEGERI SARAWAK','PEKELILING AM SARAWAK BILANGAN 4 TAHUN 2023'],
+};
+const ANSWERS = {
+  aminah:{
+    parts:['Anda boleh membawa ke hadapan cuti rehat yang tidak dihabiskan sehingga 15 hari bagi setiap tahun','@S1','. Jumlah cuti terkumpul bagi tujuan Gantian Cuti Rehat tidak boleh melebihi 150 hari sepanjang perkhidmatan','@S2','. Permohonan dikemukakan melalui modul Cuti HRMIS dan diluluskan oleh Ketua Jabatan','@S3','. Had 10 hari dalam PP 3/2018 tidak lagi terpakai.'],
+    sources:[
+      {id:'S1',doc:'PP 2/2024',clause:'4.1',page:2,crumb:'KELAYAKAN › 4.1',jur:'Persekutuan'},
+      {id:'S2',doc:'PP 2/2024',clause:'5.2',page:3,crumb:'GANTIAN CUTI REHAT › 5.2',jur:'Persekutuan'},
+      {id:'S3',doc:'PP 7/2021',clause:'3.1',page:2,crumb:'TATACARA › 3.1',jur:'Persekutuan'}],
+    excluded:[{no:'PP 3/2018',reason:'Dibatalkan oleh PP 2/2024 (1 Feb 2024)',clause:'4.1',text:'Cuti rehat yang tidak dihabiskan boleh dibawa ke tahun berikutnya tidak melebihi sepuluh (10) hari.'},
+              {no:'SPP 5/2011',reason:'Dibatalkan oleh PP 3/2018 (15 Mac 2018)',clause:'6',text:'Cuti rehat boleh dibawa ke hadapan tidak melebihi tujuh (7) hari.'}],
+    compare:[{label:'Persekutuan',tag:'Peraturan anda',rule:'15 hari setahun',detail:'Had terkumpul 150 hari',doc:'PP 2/2024 · 4.1',mine:true},
+             {label:'Sarawak',tag:'Perbandingan',rule:'20 hari setahun',detail:'Had terkumpul 150 hari',doc:'PAS 4/2023 · 3.2'}],
+  },
+  jason:{
+    parts:['Bagi pegawai Perkhidmatan Awam Negeri Sarawak, cuti rehat yang tidak dihabiskan boleh dibawa ke tahun berikutnya sehingga 20 hari setahun','@S1','. Had terkumpul bagi Gantian Cuti Rehat ialah 150 hari','@S2','. Bagi pegawai Persekutuan, hadnya ialah 15 hari setahun','@S3','.'],
+    sources:[
+      {id:'S1',doc:'PAS 4/2023',clause:'3.2',page:2,crumb:'DIBAWA KE HADAPAN › 3.2',jur:'Sarawak'},
+      {id:'S2',doc:'PAS 4/2023',clause:'3.4',page:2,crumb:'DIBAWA KE HADAPAN › 3.4',jur:'Sarawak'},
+      {id:'S3',doc:'PP 2/2024',clause:'4.1',page:2,crumb:'KELAYAKAN › 4.1',jur:'Persekutuan · perbandingan'}],
+    excluded:[{no:'PAS 6/2016',reason:'Dibatalkan oleh PAS 4/2023 (1 Jul 2023)',clause:'2.1',text:'Cuti rehat boleh dibawa ke tahun berikutnya tidak melebihi lima belas (15) hari.'}],
+    compare:[{label:'Sarawak',tag:'Peraturan anda',rule:'20 hari setahun',detail:'Had terkumpul 150 hari',doc:'PAS 4/2023 · 3.2',mine:true},
+             {label:'Persekutuan',tag:'Perbandingan',rule:'15 hari setahun',detail:'Had terkumpul 150 hari',doc:'PP 2/2024 · 4.1'}],
+  },
+};
+const REFUSAL = 'Saya tidak menemui pekeliling berkuat kuasa dalam pek anda yang menjawab soalan ini. Cuba nyatakan jenis elaun atau nombor pekeliling, atau rujuk Unit Sumber Manusia.';
+const LINEAGE = {
+  aminah:[
+    {no:'SPP 5/2011',date:'1 Jun 2011',rule:'Had dibawa ke hadapan: 7 hari setahun'},
+    {no:'PP 3/2018',date:'15 Mac 2018',rule:'Had dibawa ke hadapan: 10 hari setahun',relLabel:'MENGGANTIKAN',evidence:'Surat Pekeliling Perkhidmatan Bilangan 5 Tahun 2011 adalah dibatalkan.',evidenceRef:'PP 3/2018 · 8 · hlm. 4',summary:'Had dinaikkan daripada 7 kepada 10 hari; Gantian Cuti Rehat diperkenalkan dengan had 150 hari.'},
+    {no:'PP 2/2024',date:'1 Feb 2024',rule:'Had dibawa ke hadapan: 15 hari setahun',relLabel:'MENGGANTIKAN',evidence:'Pekeliling Perkhidmatan Bilangan 3 Tahun 2018 adalah dibatalkan.',evidenceRef:'PP 2/2024 · 9 · hlm. 5',summary:'Had dinaikkan daripada 10 kepada 15 hari; had terkumpul kekal 150 hari; permohonan kini melalui HRMIS.',current:true},
+    {no:'PP 4/2026',date:'6 Okt 2026',rule:'Meminda perenggan 6 (cuti kuarantin); perenggan 4 dan 5 tidak berubah',relLabel:'MEMINDA',evidence:'Perenggan 6 Pekeliling Perkhidmatan Bilangan 2 Tahun 2024 adalah dipinda seperti berikut.',evidenceRef:'PP 4/2026 · 3 · hlm. 1',summary:'Cuti kuarantin dilanjutkan kepada 14 hari. Had cuti rehat tidak terjejas.',v4:true}],
+  jason:[
+    {no:'PAS 6/2016',date:'4 Apr 2016',rule:'Had dibawa ke hadapan: 15 hari setahun'},
+    {no:'PAS 4/2023',date:'1 Jul 2023',rule:'Had dibawa ke hadapan: 20 hari setahun',relLabel:'MENGGANTIKAN',evidence:'Pekeliling Am Sarawak Bilangan 6 Tahun 2016 adalah dibatalkan dan digantikan dengan pekeliling ini.',evidenceRef:'PAS 4/2023 · 7 · hlm. 4',summary:'Had dinaikkan daripada 15 kepada 20 hari; rekod mesti dikemas kini sebelum 31 Januari.',current:true}],
+};
+const SUGG = [
+  {q:'Berapa hari cuti rehat boleh dibawa ke tahun hadapan?',tag:'Soalan utama'},
+  {q:'Adakah had 10 hari dalam PP 3/2018 masih terpakai?',tag:'Soalan perangkap'},
+  {q:'Adakah elaun lebih masa dibayar untuk kursus hujung minggu?',tag:'Tiada jawapan'},
+];
+const INSTALL = [
+  ['Baca manifest.json','v4 tersedia · v3 dipasang'],
+  ['Salin pack-terbuka-v4.sqlite','48.2 MB'],
+  ['Sahkan checksum SHA-256','9f2c…e41a'],
+  ['Sahkan tandatangan Ed25519','kunci awam penerbit'],
+  ['Semak model pembenaman','bge-m3 = bge-m3'],
+  ['Pasang secara atomik','v3 disimpan untuk rollback'],
+  ['Bandingkan v3 → v4','3 perubahan'],
+];
+const BUILD = ['Salin dokumen dan hubungan disahkan','Bina indeks kata kunci (FTS5)','Bina indeks trigram nombor pekeliling','Tulis vektor sqlite-vec (1024 dim.)','Sertakan ringkasan perubahan dan PDF asal','Kira SHA-256 dan tandatangan Ed25519'];
+const VERIFY = [
+  {id:'r1',src:'PP 4/2026',rel:'MEMINDA',tgt:'PP 2/2024',jur:'Persekutuan',evidence:'Perenggan 6 Pekeliling Perkhidmatan Bilangan 2 Tahun 2024 adalah dipinda seperti berikut.',where:'PP 4/2026 · perenggan 3 · hlm. 1',effect:'PP 2/2024 → Dipinda',conf:'0.94'},
+  {id:'r2',src:'PP 4/2026',rel:'MERUJUK',tgt:'PP 9/2019',jur:'Persekutuan',evidence:'Tertakluk kepada syarat-syarat dalam Pekeliling Perkhidmatan Bilangan 9 Tahun 2019.',where:'PP 4/2026 · perenggan 2.1 · hlm. 1',effect:'tiada perubahan status',conf:'0.81'},
+  {id:'r3',src:'PAS 2/2026',rel:'MEMBATALKAN',tgt:'PAS 9/2019',jur:'Sarawak',evidence:'Pekeliling Am Sarawak Bilangan 9 Tahun 2019 tidak lagi terpakai mulai tarikh pekeliling ini.',where:'Lampiran A · baris 4 · hlm. 7 (OCR)',effect:'PAS 9/2019 → Dibatalkan',conf:'0.67'},
+];
+
+class Component extends DCLogic {
+  state = {
+    mode:'officer', screen:'ask', profileKey:null, profileMenu:false, notifOpen:false,
+    draft:'', question:'', kind:null, phase:'idle', shown:0, hist:false, tab:'sources', viewerId:null, feedback:null,
+    packVer:3, installStep:-1, readNotifs:false,
+    libFilter:'all', decisions:{}, buildStep:-1, published:false,
+    port: 49000 + Math.floor(Math.random()*900),
+  };
+  timers = [];
+  componentDidMount(){ if (this.props.autoAsk) this.ask(SUGG[0].q); }
+  componentWillUnmount(){ this.clear(); }
+  clear(){ this.timers.forEach(t => { clearTimeout(t); clearInterval(t); }); this.timers = []; }
+  pk(){ return this.state.profileKey || this.props.startProfile || 'aminah'; }
+  status(no){ if (no === 'PP 2/2024' && this.state.packVer >= 4) return {st:'AMENDED',reason:'Dipinda oleh PP 4/2026'}; const d = LIB.find(x => x.no === no); return {st:d.st,reason:d.reason||''}; }
+  tokensFor(kind, pk){
+    const parts = kind === 'refuse' ? [REFUSAL] : ANSWERS[pk].parts; const out = [];
+    parts.forEach(p => { if (p[0] === '@') out.push({cite:p.slice(1)}); else p.split(/(?<=\s)/).forEach(w => out.push({text:w})); });
+    return out;
+  }
+  ask(q, pkOverride){
+    q = (q || '').trim(); if (!q) return;
+    this.clear();
+    const pk = pkOverride || this.pk();
+    const kind = /elaun|overtime|lebih masa/i.test(q) ? 'refuse' : 'hero';
+    const total = this.tokensFor(kind, pk).length;
+    const speed = this.props.streamSpeed ?? 70;
+    this.setState({question:q, draft:'', kind, phase:'retrieving', shown:0, tab:'sources', viewerId:null, feedback:null, screen:'ask', mode:'officer'});
+    this.timers.push(setTimeout(() => this.setState({phase:'sources'}), 900));
+    this.timers.push(setTimeout(() => {
+      this.setState({phase:'streaming'});
+      const iv = setInterval(() => {
+        this.setState(s => { const n = s.shown + 1; if (n >= total) { clearInterval(iv); return {shown:total, phase:'final'}; } return {shown:n}; });
+      }, speed);
+      this.timers.push(iv);
+    }, kind === 'refuse' ? 1600 : 1900));
+  }
+  installUpdate(){
+    if (this.state.installStep >= 0) return;
+    this.setState({installStep:0});
+    const iv = setInterval(() => this.setState(s => {
+      const n = s.installStep + 1;
+      if (n >= INSTALL.length) { clearInterval(iv); return {installStep:INSTALL.length, packVer:4, readNotifs:false}; }
+      return {installStep:n};
+    }), 650);
+    this.timers.push(iv);
+  }
+  startBuild(){
+    this.setState({buildStep:0, published:false});
+    const iv = setInterval(() => this.setState(s => { const n = s.buildStep + 1; if (n >= BUILD.length) { clearInterval(iv); return {buildStep:BUILD.length}; } return {buildStep:n}; }), 600);
+    this.timers.push(iv);
+  }
+  stepRow(i, cur, total, dark){
+    const done = i < cur, active = i === cur && cur < total;
+    return {
+      mark: done ? '✓' : active ? '•' : '○',
+      markFg: done ? (dark ? '#7CC59A' : '#1E6B41') : active ? (dark ? '#E0A93A' : '#23408E') : (dark ? '#4F656E' : '#B5B0A6'),
+      fg: done || active ? (dark ? '#E6EBED' : '#1A1D21') : (dark ? '#7F939B' : '#8B9097'),
+      anim: active ? 'pn-pulse 1s infinite' : 'none',
+    };
+  }
+  renderVals(){
+    const s = this.state, pk = this.pk(), profile = PROFILES[pk], officer = s.mode === 'officer';
+    const set = o => () => this.setState(o);
+    const updAvailable = s.installStep < 0, updDone = s.installStep >= INSTALL.length;
+
+    const navDefs = officer
+      ? [{k:'ask',l:'Tanya'},{k:'library',l:'Pekeliling'},{k:'updates',l:'Kemas kini',badge:updAvailable?'1':''}]
+      : [{k:'verify',l:'Pengesahan',badge:String(VERIFY.filter(v => !s.decisions[v.id]).length || '')},{k:'build',l:'Bina pek'}];
+    const navItems = navDefs.map((n,i) => { const a = s.screen === n.k; return {
+      key:String(i+1), label:n.l, badge:n.badge, hasBadge:!!n.badge, onClick:set({screen:n.k, notifOpen:false, profileMenu:false}),
+      bg:a?'#2A3F48':'transparent', fg:a?'#FFFFFF':'#B9C6CB', weight:a?600:400 }; });
+    const modeBtns = [['officer','Pegawai','ask'],['publisher','Penerbit','verify']].map(([m,l,scr]) => ({label:l,
+      onClick:set({mode:m, screen:scr, notifOpen:false, profileMenu:false}), bg:s.mode===m?'#F6F4F0':'transparent', fg:s.mode===m?'#16232A':'#9AACB3'}));
+
+    const titles = {ask:['Tanya','Jawapan bersumber daripada pekeliling berkuat kuasa'],library:['Pekeliling','Semua dokumen dalam pek yang dibenarkan untuk anda'],updates:['Kemas kini','Pek pengetahuan yang ditandatangani · disahkan sebelum dipasang'],verify:['Pengesahan hubungan','Baris gilir penerbit · hubungan pembatalan dan pindaan'],build:['Bina pek','Satu fail SQLite bagi setiap peringkat klearans']};
+    const [screenTitle, screenSub] = titles[s.screen];
+
+    // notifications
+    const notifs = s.packVer >= 4 ? [
+      {kind:'Status berubah',color:'#7A4F00',title:'PP 2/2024 kini Dipinda oleh PP 4/2026',body:'Anda bertanya tentang pekeliling ini. Perenggan cuti rehat tidak terjejas.'},
+      {kind:'Pekeliling baharu',color:'#1E6B41',title:'PP 4/2026 · Pindaan Kemudahan Cuti Kuarantin dan Cuti Rehat',body:'Kluster: Cuti · berkuat kuasa 6 Okt 2026'},
+    ] : [{kind:'Kemas kini tersedia',color:'#23408E',title:'Pek Terbuka v4 sedia untuk dipasang',body:'Ditemui dalam saluran kemas kini pejabat pada 07:42.'}];
+    notifs.forEach(n => n.onClick = set({mode:'officer', screen:'updates', notifOpen:false}));
+    const unread = s.readNotifs ? 0 : notifs.length;
+
+    // ask
+    const A = ANSWERS[pk], hero = s.kind === 'hero';
+    const hasSources = ['sources','streaming','final'].includes(s.phase);
+    const all = s.kind ? this.tokensFor(s.kind, pk) : [];
+    const tokens = all.slice(0, s.shown).map(t => t.cite
+      ? {isCite:true, id:t.cite, onClick:() => this.setState({tab:'viewer', viewerId:t.cite})}
+      : {isText:true, text:t.text});
+    const mkSrc = (src, hist) => { const stx = hist ? {st:'CANCELLED',reason:src.reason} : this.status(src.doc); const b = ST[stx.st];
+      return {...src, title:TITLES[src.doc], status:b.l, fg:b.fg, bg:b.bg, dot:b.dot, reason:stx.reason, border: hist ? '#E8CFCB' : '#E2DED6',
+        text: src.text || PAGES[src.doc+'|'+src.clause].paras.find(p => p.n === src.clause).t,
+        onOpen: hist ? null : () => this.setState({tab:'viewer', viewerId:src.id})}; };
+    let sources = hero ? A.sources.map(x => mkSrc(x)) : [];
+    if (hero && s.hist) sources = sources.concat(A.excluded.map((e,i) => mkSrc({id:'H'+(i+1), doc:e.no, clause:e.clause, page:2, crumb:'SEJARAH › '+e.clause, jur:'—', text:e.text, reason:e.reason}, true)));
+
+    const vsrc = A.sources.find(x => x.id === (s.viewerId || 'S1'));
+    const pg = PAGES[vsrc.doc+'|'+vsrc.clause];
+    const viewer = {doc:vsrc.doc+' · '+vsrc.clause, page:vsrc.page, pages:pg.pages, issuer:HEADERS[vsrc.doc][0], header:HEADERS[vsrc.doc][1], heading:pg.heading,
+      paras:pg.paras.map(p => ({...p, bg:p.n === vsrc.clause ? '#FFEFA8' : 'transparent'}))};
+
+    const lineage = LINEAGE[pk].filter(n => !n.v4 || s.packVer >= 4).map(n => { const stx = this.status(n.no); const b = ST[stx.st];
+      return {...n, title:TITLES[n.no], hasRel:!!n.relLabel, status:b.l, fg:b.fg, bg:b.bg, dot:b.dot, border:n.current ? '2px solid #23408E' : '1px solid #E2DED6'}; });
+
+    const tabDefs = [['sources', hero && hasSources ? `Sumber (${sources.length})` : 'Sumber'],['viewer','Halaman'],['lineage','Salasilah']];
+    const tabs = tabDefs.map(([k,l]) => ({label:l, onClick:set({tab:k}), fg:s.tab===k?'#1A1D21':'#6B7178', weight:s.tab===k?600:400, line:s.tab===k?'#23408E':'transparent'}));
+    const ready = hero && hasSources;
+    const rightEmpty = !ready;
+    const rightEmptyText = s.phase === 'retrieving' ? 'Mencari petikan yang berkaitan…' : s.kind === 'refuse' && hasSources ? 'Tiada petikan daripada pekeliling berkuat kuasa yang cukup kukuh untuk menjawab soalan ini.' : 'Sumber, halaman asal dan salasilah pindaan dipaparkan di sini sebaik carian selesai.';
+
+    const statusLine = {retrieving:`Mencari dalam ${profile.clr+1} pek · kata kunci, trigram, vektor…`, sources: hero ? 'Sumber ditemui dalam 0.8 s · model sedang menulis…' : 'Carian selesai · menyemak sama ada soalan boleh dijawab…', streaming:'Sumber ditemui dalam 0.8 s · model sedang menulis…', final: hero ? 'Selesai · semua petikan disahkan' : 'Selesai · tiada sumber yang mencukupi'}[s.phase] || '';
+
+    const compareCols = A.compare.map(c => ({...c, border:c.mine?'#23408E':'#E2DED6', bg:c.mine?'#FFFFFF':'#FAF8F4'}));
+    const feedbackBtns = [['up','Membantu'],['down','Tidak membantu']].map(([k,l]) => ({label:l, onClick:set({feedback:k}), bg:s.feedback===k?'#EEF1FA':'#FFFFFF', border:s.feedback===k?'#23408E':'#DAD5CB'}));
+
+    // library
+    const lf = s.libFilter;
+    const libRows = LIB.filter(d => (!d.v4 || s.packVer >= 4) && d.tier <= profile.clr)
+      .map(d => ({...d, ...this.status(d.no)}))
+      .filter(d => lf === 'all' || (lf === 'valid' ? d.st !== 'CANCELLED' : d.st === 'CANCELLED'))
+      .map(d => { const b = ST[d.st]; return {...d, status:b.l, fg:b.fg, bg:b.bg, dot:b.dot, tier:d.tier ? 'Terhad' : 'Terbuka', tierFg:d.tier?'#7E1F18':'#5D636B', tierWeight:d.tier?600:400, rowBg: d.tier ? '#FCF8F3' : '#FFFFFF'}; });
+    const libFilters = [['all','Semua'],['valid','Masih terpakai'],['cancelled','Dibatalkan']].map(([k,l]) => ({label:l, onClick:set({libFilter:k}), bg:lf===k?'#16232A':'#FFFFFF', fg:lf===k?'#FFFFFF':'#1A1D21', border:lf===k?'#16232A':'#DAD5CB'}));
+    const libFoot = profile.clr ? 'Termasuk 1 dokumen Terhad sintetik. Dokumen bertanda SINTETIK – CONTOH SAHAJA ialah bahan demo.' : 'Pek Terhad tidak dibuka untuk klearans Terbuka. Dokumen terhad tidak dipaparkan di mana-mana.';
+
+    // updates
+    const installSteps = INSTALL.map(([label, detail], i) => ({label, detail, ...this.stepRow(i, s.installStep < 0 ? -1 : s.installStep, INSTALL.length)}));
+    const changes = [
+      {kind:'Pekeliling baharu',color:'#1E6B41',title:'PP 4/2026 · Pindaan Kemudahan Cuti Kuarantin dan Cuti Rehat',body:'Cuti kuarantin dilanjutkan kepada 14 hari. Berkuat kuasa 6 Oktober 2026.'},
+      {kind:'Status berubah',color:'#7A4F00',title:'PP 2/2024 · Berkuat kuasa → Dipinda',body:'Hanya perenggan 6 dipinda. Had cuti rehat 15 hari dan had terkumpul 150 hari kekal.'},
+      {kind:'Hubungan baharu',color:'#23408E',title:'PP 4/2026 meminda PP 2/2024',body:'Disahkan oleh penerbit · bukti di PP 4/2026, perenggan 3, hlm. 1.'},
+    ];
+    const packs = [{name:'Pek Terbuka', ver:s.packVer, file:`pack-terbuka-v${s.packVer}.sqlite`, meta:`${s.packVer>=4?143:142} dokumen · bge-m3 · ${s.packVer>=4?'48.2':'46.9'} MB`, note: s.packVer>=4 ? 'Dipasang 7 Okt 2026 · v3 disimpan untuk rollback' : 'Dipasang 12 Sep 2026'}];
+    if (profile.clr >= 1) packs.push({name:'Pek Terhad', ver:2, file:'pack-terhad-v2.sqlite', meta:'5 dokumen sintetik · bge-m3 · 3.1 MB', note:'Dibuka kerana klearans anda: Terhad'});
+
+    // publisher
+    const verifyItems = VERIFY.map(v => { const d = s.decisions[v.id]; return {...v, pending:!d, decided:!!d, opacity:d==='rejected'?0.6:1,
+      decLabel:d==='approved'?'Disahkan · akan dimasukkan ke pek':'Ditolak · tidak menjejaskan status', decColor:d==='approved'?'#1E6B41':'#9A241C',
+      onApprove:() => this.setState(st => ({decisions:{...st.decisions,[v.id]:'approved'}})),
+      onReject:() => this.setState(st => ({decisions:{...st.decisions,[v.id]:'rejected'}})),
+      onUndo:() => this.setState(st => { const x = {...st.decisions}; delete x[v.id]; return {decisions:x}; })}; });
+    const verifiedCount = Object.values(s.decisions).filter(x => x === 'approved').length;
+    const tiers = [
+      {name:'Pek Terbuka', tier:'Terbuka', fg:'#1E6B41', bg:'#E2F0E7', meta:'143 dokumen · 4,812 petikan · 31 hubungan disahkan', delivery:'Dihantar ke semua peranti pegawai', ver:'v3 → v4'},
+      {name:'Pek Terhad', tier:'Terhad', fg:'#9A241C', bg:'#F7E0DC', meta:'5 dokumen sintetik · 61 petikan', delivery:'Dihantar hanya ke peranti pegawai berklearans', ver:'v2 → v3'},
+    ];
+    const buildSteps = BUILD.map((label, i) => ({label, ...this.stepRow(i, s.buildStep, BUILD.length, true)}));
+
+    return {
+      modeLabel: officer ? 'Mod Pegawai' : 'Mod Penerbit', modeBtns, navItems, profile,
+      profileMenuOpen:s.profileMenu, toggleProfileMenu:() => this.setState(x => ({profileMenu:!x.profileMenu, notifOpen:false})),
+      profileOptions:Object.values(PROFILES).map(p => ({...p, bg:p.key===pk?'#F1EEE8':'#FFFFFF', onClick:() => {
+        this.setState({profileKey:p.key, profileMenu:false, libFilter:'all'});
+        if (s.question) this.ask(s.question, p.key);
+      }})),
+      screenTitle, screenSub,
+      notifOpen:s.notifOpen, notifs, unread, hasUnread:unread>0,
+      toggleNotif:() => this.setState(x => ({notifOpen:!x.notifOpen, readNotifs:true, profileMenu:false})),
+      showBanner: officer && updAvailable && s.screen !== 'updates', goUpdates:set({screen:'updates'}),
+      isAsk:officer && s.screen==='ask', isLibrary:officer && s.screen==='library', isUpdates:officer && s.screen==='updates',
+      isVerify:!officer && s.screen==='verify', isBuild:!officer && s.screen==='build',
+      asked:!!s.question, notAsked:!s.question, question:s.question,
+      suggestions:SUGG.map(x => ({...x, onClick:() => this.ask(x.q)})),
+      draft:s.draft, onDraft:e => this.setState({draft:e.target.value}), onKey:e => { if (e.key === 'Enter') this.ask(s.draft); }, submit:() => this.ask(s.draft),
+      histBg:s.hist?'#23408E':'#C3BEB4', histKnob:s.hist?'14px':'2px', toggleHist:() => this.setState(x => ({hist:!x.hist})),
+      packCountLabel: profile.clr ? 'Pek Terbuka + Terhad' : 'Pek Terbuka',
+      statusLine, phaseDot: s.phase==='final' ? (hero?'#2E8B57':'#8A9097') : '#23408E', phaseAnim: s.phase==='final' ? 'none' : 'pn-pulse 1s infinite',
+      showExcluded: hero && hasSources, excluded:A.excluded, openLineage:set({tab:'lineage'}),
+      showAnswer: s.phase==='streaming' || s.phase==='final', answerLabel: hero ? 'Jawapan' : 'Tidak dapat dijawab',
+      tokens, isStreaming:s.phase==='streaming', isFinalHero: hero && s.phase==='final',
+      feedbackBtns, showCompare: hero && s.phase==='final', compareCols,
+      tabs, rightEmpty, rightEmptyText, showSourcesList: ready && s.tab==='sources', showViewer: ready && s.tab==='viewer', showLineage: ready && s.tab==='lineage',
+      sources, viewer, lineage,
+      libRows, libFilters, libFoot,
+      updAvailable, updDone, installUpdate:() => this.installUpdate(), installSteps, changes, packs, packLocked: profile.clr < 1,
+      verifyItems, verifiedCount, tiers, buildSteps,
+      buildIdle:s.buildStep < 0, buildDone:s.buildStep >= BUILD.length, startBuild:() => this.startBuild(),
+      publish:set({published:true}), publishLabel:s.published?'Diterbitkan ke \\\\fs01 · manifest.json dikemas kini':'Terbitkan ke saluran kemas kini', publishBg:s.published?'#7CC59A':'#E6EBED',
+      packLine: `Pek Terbuka v${s.packVer}` + (profile.clr ? ' · Terhad v2' : ''), port:s.port,
+    };
+  }
+}
+</script>
+</body>
+</html>
