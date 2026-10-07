@@ -29,6 +29,40 @@ TABS = [
 MODE_COLORS = {"offline": "gray", "ollama": "green", "bedrock": "blue"}
 
 
+STYLE = """
+<style>
+/* MixUp Navigator look: clean cards, purple accent (matches the pitch deck) */
+#MainMenu, footer, [data-testid="stToolbar"], [data-testid="stDecoration"] {visibility: hidden; height: 0;}
+.block-container {padding-top: 1.2rem; padding-bottom: 3rem; max-width: 1180px;}
+html, body, [class*="css"] {font-family: Inter, -apple-system, "Segoe UI", Helvetica, Arial, sans-serif;}
+.mx-hero {display: flex; justify-content: space-between; align-items: flex-end; gap: 1rem;
+  padding: 1.4rem 1.6rem; border-radius: 1rem; margin-bottom: 1rem;
+  background: linear-gradient(135deg, #1E1B4B 0%, #4C1D95 60%, #6D28D9 100%); color: #fff;}
+.mx-brand {display: flex; align-items: center; gap: .7rem;}
+.mx-logo {display: inline-flex; align-items: center; justify-content: center; width: 2.4rem; height: 2.4rem;
+  border-radius: .6rem; background: #fff; color: #4C1D95; font-weight: 800; letter-spacing: .02em;}
+.mx-name {font-size: 2rem; font-weight: 800; letter-spacing: -.02em;}
+.mx-tag {margin-top: .5rem; font-size: 1.05rem; font-weight: 600; color: #EDE9FE;}
+.mx-tag-sub {font-size: .9rem; color: #C4B5FD; margin-top: .15rem;}
+.mx-team {color: #DDD6FE;}
+.mx-hero-right {display: flex; flex-direction: column; gap: .4rem; align-items: flex-end;}
+.mx-chip {font-size: .78rem; padding: .3rem .7rem; border-radius: 999px; background: rgba(255,255,255,.14);
+  border: 1px solid rgba(255,255,255,.25); color: #F5F3FF; white-space: nowrap;}
+.mx-chip-ok {background: rgba(16,185,129,.18); border-color: rgba(110,231,183,.5); color: #D1FAE5;}
+.stTabs [data-baseweb="tab-list"] {gap: .25rem; border-bottom: 1px solid #E5E7EB;}
+.stTabs [data-baseweb="tab"] {padding: .55rem .9rem; border-radius: .6rem .6rem 0 0; font-weight: 600;}
+.stTabs [aria-selected="true"] {background: #F5F3FF;}
+div[data-testid="stExpander"], div[data-testid="stForm"] {border-radius: .75rem;}
+[data-testid="stSidebar"] .stButton button {width: 100%;}
+@media (max-width: 800px) {.mx-hero {flex-direction: column; align-items: flex-start;} .mx-hero-right {align-items: flex-start;}}
+</style>
+"""
+
+
+def inject_style() -> None:
+    st.markdown(STYLE, unsafe_allow_html=True)
+
+
 @st.cache_resource(show_spinner="Memuatkan pekeliling / Loading circulars...")
 def get_store() -> Store:
     """One Store for the whole app (shared by every browser session)."""
@@ -129,9 +163,25 @@ def safe_render(module, ctx: common.UIContext) -> None:
 def main() -> None:
     store = get_store()
     ctx = render_sidebar(store)
-    st.title(PRODUCT_NAME)
-    tagline = f"*{TAGLINE_EN}*  \n{TAGLINE_MS}" if ctx.lang == "en" else f"*{TAGLINE_MS}*  \n{TAGLINE_EN}"
-    st.markdown(f"{tagline}  \n:gray[{ctx.t('by_team')}]")
+    inject_style()
+    tag_main, tag_sub = (TAGLINE_EN, TAGLINE_MS) if ctx.lang == "en" else (TAGLINE_MS, TAGLINE_EN)
+    offline = "Luar talian: semua jawapan dijana pada komputer ini" if ctx.lang == "ms" else "Offline: every answer is produced on this computer"
+    st.markdown(
+        f"""
+<div class="mx-hero">
+  <div class="mx-hero-left">
+    <div class="mx-brand"><span class="mx-logo">MX</span><span class="mx-name">{PRODUCT_NAME}</span></div>
+    <div class="mx-tag">{tag_main}</div>
+    <div class="mx-tag-sub">{tag_sub} · <span class="mx-team">{ctx.t('by_team')}</span></div>
+  </div>
+  <div class="mx-hero-right">
+    <span class="mx-chip mx-chip-ok">&#9679; {offline}</span>
+    <span class="mx-chip">SINTETIK · CONTOH SAHAJA</span>
+  </div>
+</div>
+""",
+        unsafe_allow_html=True,
+    )
     tabs = st.tabs([name for name, _ in TABS])
     for tab, (_, module) in zip(tabs, TABS):
         with tab:
