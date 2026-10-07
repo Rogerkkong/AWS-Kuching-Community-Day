@@ -6,6 +6,7 @@ Team documents for AWS Student Community Day Kuching.
 |---|---|
 | [`problem-statement.md`](problem-statement.md) | The challenge we are solving |
 | [`problem-explainer.md`](problem-explainer.md) | Plain-English explainer of the problem, what Malaysia already has, and recent news |
+| [`research/teammate/README.md`](research/teammate/README.md) | Summary of the two teammate research PDFs: key takeaways, fact-check results (which numbers are safe to quote), and 3 solution options with a recommendation |
 | [`presentation/AWS_Student_Community_Day_Kuching_template.pptx`](presentation/AWS_Student_Community_Day_Kuching_template.pptx) | Official pitch deck template (keep this file unchanged; save our deck as a copy) |
 
 ## Pitch rules (from the template)
