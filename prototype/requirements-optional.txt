@@ -1,3 +1,0 @@
-# Optional: Claude on Amazon Bedrock (LLM_PROVIDER=bedrock). Imported lazily; not needed for the offline demo.
-anthropic[bedrock]>=1.11
-boto3>=1.34
