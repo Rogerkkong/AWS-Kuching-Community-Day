@@ -36,7 +36,9 @@ One codebase, two modes:
 .venv/Scripts/python -m app.web
 ```
 
-Or double-click `start_web.cmd`. This starts **one website** on http://127.0.0.1:8765 and opens it in the
+Or double-click `start_web.cmd` (Windows). On **macOS / Linux** run `./start_web.sh` (first run creates
+`.venv`, installs `requirements.txt` and builds the demo packs; needs Python 3.11+), or manually use
+`.venv/bin/python` wherever this README says `.venv/Scripts/python`. This starts **one website** on http://127.0.0.1:8765 and opens it in the
 browser. The account switcher (bottom left) decides the view: officer accounts (Aina, Jason, Aminah) see
 the Officer screens, Faizal (Publisher) sees the Publisher screens; Publisher actions are refused for
 officer accounts. If Ollama is not running, the fake backend is used automatically. Keep the console
