@@ -1,19 +1,19 @@
 ---
 name: quick-spec
-description: Writes a lightweight, credit-efficient Kiro spec for a small or medium feature (about half a day of work for a 3-person team) in .kiro/specs/<feature-name>/. It produces requirements.md with user stories and numbered EARS acceptance criteria, a compact design.md (components, data model, API contract, error handling, testing) and tasks.md with Kiro checkboxes, owner tags, parallel work streams and requirement trace lines. Use when someone says 'quick spec', 'spec this', 'plan this feature', 'mini spec', 'write requirements for', 'break this into tasks', 'split this between the three of us', 'who does what', or wants to plan a hackathon feature on AWS (Lambda, API Gateway, DynamoDB, S3, Cognito, Amplify, Bedrock) without running the full Kiro spec flow. It escalates large features to a full spec, sends stack and AWS service choices to architecture-selection, and sends defects to bug-fix.
+description: Writes a lightweight, credit-efficient Kiro spec for a small or medium feature (about half a day of work for a 3-person team) in .kiro/specs/<feature-name>/. It produces requirements.md with user stories and numbered EARS acceptance criteria, a compact design.md (components, data model, API contract, error handling, testing) and tasks.md with Kiro checkboxes, owner tags, parallel work streams and requirement trace lines. Use when someone says 'quick spec', 'spec this', 'plan this feature', 'mini spec', 'write requirements for', 'break this into tasks', 'split this between the three of us', 'who does what', or wants to plan a hackathon feature on the AWS services already in tech.md (Lambda, API Gateway, DynamoDB, S3, Cognito, Amplify, Bedrock) without running the full Kiro spec flow. It escalates large features to a full spec, sends stack and AWS service choices to architecture-selection, and sends defects to bug-fix.
 metadata:
   version: "1.0"
 ---
 
 # Quick Spec
 
-This skill writes a small spec in Kiro's native format (`requirements.md`, `design.md`, `tasks.md` in `.kiro/specs/<feature-name>/`) in one clarification round and one writing turn. It also splits the work so three people can build in parallel without merge conflicts. Because the layout matches what Kiro's own spec flow generates, the spec opens from the Specs section of the Kiro panel and tasks can be started from `tasks.md`.
+This skill writes a small spec in Kiro's native format (`requirements.md`, `design.md`, `tasks.md` in `.kiro/specs/<feature-name>/`) in one clarification round and one writing turn. It also splits the work so three people can build in parallel without merge conflicts. The layout copies Kiro's own generated specs, so Kiro should list the spec in the Specs section and offer "Start task" in `tasks.md`; this is untested for hand-written folders, so Phase 8 gives a fallback.
 
 The skill is tuned for this team:
 
 - Three students on a time-boxed delivery (AWS Community Day, hackathon style). Whatever can be demoed beats whatever is complete.
 - An AWS-native stack. The chosen services, languages and folder layout live in `.kiro/steering/tech.md` and `.kiro/steering/structure.md`, which the `architecture-selection` skill owns.
-- The Kiro Free plan: 50 credits a month, no top-ups, and every prompt, spec refinement and task run draws on them. Wasted turns are the main thing to avoid.
+- The Kiro Free plan: 50 credits a month per account, no top-ups. Prompts, spec refinements, task runs and agent hooks all draw on them, and a task run usually costs more than a simple prompt. Wasted turns are the main thing to avoid.
 
 Kiro's built-in Spec flow and Quick Plan mode also produce these three files. If the teammate explicitly asks for one of them, let them use it, then offer Phase 7 below (the three-person split) on the `tasks.md` it generates.
 
@@ -36,12 +36,15 @@ Output: one route decision. Do not write any files in this phase.
 | Signal | Route |
 |---|---|
 | 30 minutes or less, one or two files, obvious behavior | **No spec.** Suggest doing it directly in chat. |
-| Existing behavior is wrong: an error, a stack trace, "it used to work" | **Hand off to `bug-fix`.** |
+| Existing behavior is wrong: an error, a stack trace, "it used to work" | **Hand off to `bug-fix`.** Exception: `bug-fix` already sent it here because the fix changes an API contract, key schema or index, or the expected behavior is undefined. That is a quick spec; do not send it back, and name `BUG-<n>` in the Introduction. |
 | Stack not decided: needs a service, framework or data store not in an existing `tech.md`, or a choice between options (DynamoDB vs RDS, REST vs WebSocket). If `tech.md` is missing, see Phase 2 | **Hand off to `architecture-selection`**, then return here. |
-| 1 to 5 requirements, 12 leaf tasks or fewer, about half a day of team effort, at most one new table, bucket or route group, one user role | **Quick spec. Continue.** |
-| More than 5 requirements or 12 leaf tasks, more than a day, several roles, payments, sensitive personal data, or a cross-cutting refactor | **Escalate to the full Kiro spec flow** (Specs, +, Feature), or split into smaller quick specs that each demo on their own. |
+| 1 to 5 requirements, 12 leaf tasks or fewer, a critical path of about half a day (4 to 5 hours) with three people working in parallel, at most one new table, bucket or route group, one user role | **Quick spec. Continue.** |
+| Between half a day and a day of critical path | **Split** into two quick specs that each demo on their own. |
+| More than 5 requirements or 12 leaf tasks, more than a day of critical path, several roles, payments, sensitive personal data, or a cross-cutting refactor | **Escalate to the full Kiro spec flow** (Specs, +, Feature), or split into smaller quick specs. |
 
 When you are unsure, prefer splitting into smaller quick specs over escalating. Small specs ship; big ones stall.
+
+The **walking skeleton** that `architecture-selection` hands off first (hello-world through every layer, deployed) is a normal quick spec. Requirement 1 is "a teammate can open the deployed URL and see data from the API"; the contract in task 1.1 is a single health or hello route.
 
 Exit criteria: you have chosen one route and stated it in one sentence. If the route is not "Quick spec", tell the teammate which skill or flow to use and stop.
 
@@ -49,13 +52,13 @@ Exit criteria: you have chosen one route and stated it in one sentence. If the r
 
 Read only the following, and skip silently any that do not exist:
 
-1. `.kiro/steering/tech.md`, `.kiro/steering/structure.md` and `.kiro/steering/product.md`.
+1. `.kiro/steering/tech.md`, `.kiro/steering/structure.md` and `.kiro/steering/product.md`. Steering without frontmatter is `inclusion: always`, so these are normally already in your context; do not open them again. Open one only if its content is missing from context (for example it uses `inclusion: manual` or `fileMatch`).
 2. The folder names under `.kiro/specs/`, without opening them, to avoid a name collision and spot related specs. Open a related spec's `design.md` only if this feature extends it.
 3. The entry file of an existing module the request names explicitly (for example "add export to the dashboard page"). Do not scan the codebase.
 
 If `tech.md` is missing and no stack was stated, do not stall. Ask for the stack in one line among the Phase 3 questions (for example "React + API Gateway + Lambda (Node.js) + DynamoDB"), record the answer as an assumption in `design.md`, and recommend `/architecture-selection` afterwards.
 
-For owner tags, use the `## Ownership` table in `structure.md` (written by `architecture-selection`) when it exists: its names become the owner tags and its areas become the streams. Otherwise use `@A`, `@B` and `@C`, with the default streams in Phase 7.
+For owner tags, use the `## Ownership` table in `structure.md` (written by `architecture-selection`) when it exists. Its Owner names become the tags (`@Mei`), its three areas become the FE, BE and INFRA streams, and each task goes to the owner whose `Covers` column contains the task's files. Otherwise use `@A`, `@B` and `@C`, with the default streams in Phase 7.
 
 Exit criteria: you know the stack, the folder layout (or an assumed one) and the owner tags.
 
@@ -133,13 +136,14 @@ Exit criteria: between 1 and 5 requirements and between 4 and 20 criteria in tot
 Fill in the design section of the templates file, and drop any section that would say nothing:
 
 - `## Overview`: 3 to 6 lines, naming the steering decisions it relies on.
-- `## Architecture`: one Mermaid flowchart or ASCII diagram of 15 lines or fewer, plus 2 to 5 `### Key Design Decisions`, each with a one-line reason.
+- `## Architecture`: one Mermaid flowchart or ASCII diagram of 15 lines or fewer, plus 2 to 6 `### Key Design Decisions`, each with a one-line reason.
 - `## Components and Interfaces`: a table of Component, Responsibility, Location (from `structure.md`) and Stream.
 - `## Data Models`: key schema, attributes, the access patterns served, and fake example records.
-- `## API Contract`: method, path, request, responses by status code with example JSON, and auth (or "none, dev stage only").
+- `## API Contract`: method, path, request, responses by status code with example JSON, and auth. "None" is allowed for a demo, but say that the URL is then public, so the route holds fake data only.
+- `## Correctness Properties` (only for pure logic worth property testing, such as "for any ticket, a second check-in never changes `checkedInAt`"; otherwise drop it): `### Property N`, a "*For any* ..." sentence and `**Validates: Requirements x.y**`.
 - `## Error Handling`: Scenario, Detection, Response to user and Criterion, one row per `IF ..., THEN` criterion.
-- `## AWS Notes`: one line per item of the AWS design checklist in the templates file (IAM, secrets, CORS and auth, DynamoDB, S3, Bedrock, region, cost, personal data). Anything not in `tech.md` means handing off to `architecture-selection`.
-- `## Testing Strategy`: the one or two required tests that protect the core rule; the rest are optional. Add `## Correctness Properties` only for pure logic worth property testing, such as "for any ticket, a second check-in never changes `checkedInAt`".
+- `## AWS Notes`: one line per item of the AWS design checklist in the templates file (IAM, secrets, Lambda, CORS and auth, DynamoDB, S3, Bedrock, region, cost, personal data). Anything not in `tech.md` means handing off to `architecture-selection`.
+- `## Testing Strategy`: the one or two required tests that protect the core rule; the rest are optional.
 
 Exit criteria: every component has an owner stream and a path, every route has request and response examples, and every `IF ..., THEN` criterion appears in Error Handling.
 
@@ -161,7 +165,7 @@ Use the tasks section of [references/templates.md](references/templates.md). Kee
 
 The syntax works like this:
 
-- `- [ ]` marks a task not started, `- [-]` in progress and `- [x]` done. A `*` after the box (`- [ ]*`) marks an optional task.
+- `- [ ]` marks a task not started, `- [-]` in progress and `- [x]` done. A `*` after the box (`- [ ]*`) marks an optional task. Put `*` on sub-tasks only; Kiro's own output never stars a top-level task.
 - Top-level tasks are numbered `1.`, `2.`, and so on; sub-tasks are `1.1`, `1.2`, and so on, indented two spaces. Detail bullets are indented four spaces.
 - The last detail bullet is the trace line: `_Requirements: 1.1, 2.3_`.
 - A checkpoint is a top-level task named `Checkpoint - <name>`, whose body reads "Ensure all tests pass, ask the user if questions arise." plus what to demo.
@@ -174,18 +178,22 @@ Splitting rules for three people:
 3. **Leaf task size.** A leaf task takes 30 minutes to 2 hours of human time, fits one Kiro "Start task" run, touches about 5 files or fewer and has one "Done when" check. Split anything bigger by layer or by acceptance criterion, never into "part 1" and "part 2".
 4. **Disjoint files.** Every leaf task lists `Files:`, and no two parallel tasks edit the same file. Give each hot file (package manifests and lockfiles, the stack entry, the route table, the app router, shared types) to one owner, or touch it only at integration.
 5. **Explicit dependencies.** Write `Depends on:` with task numbers. Depend on the contract or on earlier tasks in the same stream. Cross-stream dependencies happen only at checkpoints.
-6. **Demo path first.** In each stream, order tasks so that the demo moment (Requirement 1) works end to end first. Stretch work comes last and is marked `*`.
+6. **Demo path first.** In each stream, order tasks so that the demo moment (Requirement 1) works end to end first. Stretch tasks go last in their own stream, are marked `*` and depend on the integration checkpoint.
 7. **Checkpoints.** Use three: after the contract, at integration (switch from mocks to the deployed API and run the demo path) and a final checkpoint.
 8. **Traceability.** Every leaf task has a trace line, and every acceptance criterion appears in at least one non-optional task. Keep at least one required test for the core rule; other tests may be optional.
-9. **Cap.** Use 12 or fewer leaf tasks, not counting checkpoints. Needing more means returning to Phase 1 and splitting the feature.
-10. **Branches.** Use one branch per stream, `feat/<feature-name>-<stream>`, and merge the contract first. Keep pull requests small enough for a teammate to review in 10 minutes.
+9. **Cap and time box.** Use 12 or fewer leaf tasks, not counting checkpoints; needing more means returning to Phase 1. If the critical path is longer than the time left, cut in this order: `*` tasks, the stretch requirement, then the lowest requirement. Keep the contract, the required core-rule test and the integration checkpoint.
+10. **Branches.** Follow the branch convention in `structure.md`; otherwise use one branch per stream, `feature/<feature-name>-<stream>`. Merge the contract first and keep pull requests small enough to review in 10 minutes.
+11. **Shared spec files.** Everyone's Kiro ticks boxes in the same `tasks.md`; each person ticks only their own tasks, so the edits sit on different lines and usually merge cleanly (in a conflict, keep the `[x]`). Requirement and design text is edited by one person and merged before the others pull.
+12. **Credits.** Each owner starts their own tasks in their own Kiro, which spreads spending over three accounts. Mechanical tasks (seed data, demo script, a README line) are cheaper by hand or with one short chat prompt.
 
-In `## Notes`, always include these four lines:
+In `## Notes`, always include these lines (the first three are the ones Kiro's own specs use):
 
 - Tasks marked with `*` are optional and can be skipped for a faster MVP.
 - Each task references specific requirements for traceability.
+- Checkpoints ensure incremental validation; cross-stream dependencies happen only at checkpoints.
 - Start tasks one at a time in order of priority; on the Free plan avoid "Run all tasks" unless enough credits remain.
 - A teammate may implement a task by hand and tick its box; that uses no credits.
+- The branch names and the merge order.
 
 Exit criteria: 12 or fewer leaf tasks, each with an owner, an estimate, files, a "Done when" check and a trace line; no parallel file overlap; the streams roughly balanced; and three checkpoints.
 
@@ -197,8 +205,8 @@ Run this checklist silently and fix any failures before replying:
 - [ ] Every criterion is in EARS form, has a Glossary subject, is observable and is traced by a non-optional task.
 - [ ] Every `IF ..., THEN` criterion has a row in Error Handling.
 - [ ] No service, library or region appears that is not in `tech.md` or the stated assumptions.
-- [ ] Each leaf task is 2 hours or less with an owner, files and dependencies; no parallel tasks share a file; the streams are within roughly 40% of each other; and the critical path fits the deadline.
-- [ ] No real personal data, secrets or account IDs appear anywhere.
+- [ ] Each leaf task is 2 hours or less with an owner, files and dependencies; no parallel tasks share a file; no stream holds more than about 40% of the total estimate; and the critical path fits the deadline.
+- [ ] No real personal data, secrets or account IDs appear anywhere. Any route without auth stores fake data only and is listed for teardown.
 
 Reply in chat with this summary of 12 lines or fewer, and nothing longer:
 
@@ -211,16 +219,16 @@ Quick spec ready: .kiro/specs/<feature-name>/
 - In Kiro: Specs section -> <feature-name> -> tasks.md -> Start task on your next task
 ```
 
-If the new spec does not appear in the Specs section, open `tasks.md` from the file explorer. If the task actions still do not appear, tell the teammate; do not fabricate Kiro metadata files.
+If the new spec does not appear in the Specs section, open `tasks.md` from the file explorer. If "Start task" still does not appear, tell the teammate to run a task from chat instead ("Implement task 3.1 in .kiro/specs/<feature-name>/tasks.md") and tick its box when done. Do not fabricate `.config.kiro` or other Kiro metadata files.
 
 ## Definition of done
 
 A **task** is done when:
 
-- [ ] Its code is committed on the stream branch and builds or deploys without errors.
-- [ ] Its "Done when" check passes (a test, a curl request or a click-through), along with any required tests for its traced criteria.
-- [ ] No secrets, account IDs or real personal data have been committed.
-- [ ] Its checkbox is `[x]`. Kiro updates this when it runs the task; tick it yourself for work done by hand.
+- [ ] Its code is committed on the stream branch (Conventional Commits, e.g. `feat(checkin): ...`, as in `structure.md`) and builds or deploys without errors.
+- [ ] Its "Done when" check (a test, a curl request or a click-through) and any required tests for its criteria pass.
+- [ ] No secrets, account IDs or real personal data are committed.
+- [ ] Its box is `[x]` (Kiro ticks it after a task run; tick it yourself for work done by hand).
 
 The **feature** is done when:
 
@@ -244,20 +252,11 @@ The full three files are in [references/example-attendee-checkin.md](references/
 
 Request: `/quick-spec staff scan attendee QR codes at the door to check them in, show a live count`
 
-The route is quick spec: one role, one table, two routes, about half a day, with React, API Gateway, Lambda and DynamoDB assumed in `tech.md`. The one clarification message asks whether the QR code holds only an opaque ticket ID, whether staff login is out of scope (dev stage only), and whether manual entry is needed if the camera fails. The defaults are yes, yes and yes, and the teammate replies "ok".
+The route is quick spec: one role, one table, two routes, about half a day, with React, API Gateway, Lambda and DynamoDB assumed in `tech.md`. The one clarification message asks whether the QR code holds only an opaque ticket ID, whether staff login is out of scope (so the API is public and holds fake data only), and whether manual entry is needed if the camera fails. The defaults are yes, yes and yes, and the teammate replies "ok".
 
-Phase 5, Requirement 1 excerpt:
+Requirement 1 ("Check in an attendee by scanning a QR code") gets 6 criteria. A model criterion:
 
 ```markdown
-### Requirement 1: Check in an attendee by scanning a QR code
-
-**User Story:** As a Staff_User, I want to scan an attendee's QR code, so that their arrival is recorded in seconds.
-
-#### Acceptance Criteria
-
-1. WHEN the Scanner_Page decodes a Ticket_Id that exists and is not checked in, THE Checkin_Api SHALL store the current time as checkedInAt and return status "checked_in" with the attendee display name.
-2. WHEN the Checkin_Api returns "checked_in", THE Scanner_Page SHALL show a success state with the attendee display name.
-3. IF the Ticket_Id does not exist, THEN THE Checkin_Api SHALL return HTTP 404 and SHALL NOT write any data.
 4. IF the attendee is already checked in, THEN THE Checkin_Api SHALL return HTTP 409 with the original checkedInAt and SHALL NOT overwrite it.
 ```
 
@@ -267,31 +266,29 @@ Phase 7, the split:
 1.1 Contract + mocks ............ @B 45m
 2.  Checkpoint - contract agreed  (all, 10m)
 3.x FE: scanner page, result states, live count ......... @A ~3h
-4.x BE: POST /checkins (conditional write), GET count ... @B ~2h
+    3.4* stretch: recent check-ins on this device, after 6 ... @A 45m
+4.x BE: POST /checkins (transaction with conditional write), GET count ... @B ~2h
 5.x INFRA/QA: table + routes + IAM, seed fake attendees + printable QRs, demo script,
     optional property tests ............................ @C ~2.75h
-6.  Checkpoint - integration (FE switches from mocks to dev API, run demo path)
-7.* Stretch: recent check-ins on this device (optional) ... @A 45m
-8.  Checkpoint - final
+6.  Checkpoint - integration (FE switches from mocks to the deployed API, run demo path)
+7.  Checkpoint - final
 ```
 
 ## Anti-patterns (do not do this)
 
-- Asking questions one at a time over several turns, or asking about what the request already says.
-- Regenerating all three files after a one-line change.
-- Choosing a new AWS service, database or framework inside `design.md` instead of handing off to `architecture-selection`.
-- Using vague criteria such as "THE system SHALL be fast and user-friendly".
-- Writing tasks like "Build backend", "Frontend" or "Testing", or splitting a task into "Part 1" and "Part 2".
-- Letting two people edit the route table, `package.json` or the infrastructure stack entry in parallel.
-- Leaving requirements with no tasks, or adding tests that trace to no requirement.
-- Writing an architecture essay, or a sequence diagram for every flow.
-- Hand-writing `.config.kiro`, or renumbering criteria after tasks reference them.
+- Asking questions over several turns, or asking about what the request already says.
+- Regenerating whole files after a one-line change, or renumbering criteria after tasks reference them.
+- Choosing a new AWS service, database or framework in `design.md` instead of handing off to `architecture-selection`, or using a quick spec for a bug.
+- Vague criteria ("THE system SHALL be fast and user-friendly"), requirements with no tasks, or tests that trace to no requirement.
+- Tasks like "Build backend" or "Testing", "Part 1"/"Part 2" splits, or two people editing the route table, `package.json` or the IaC stack entry in parallel.
+- An architecture essay, or a sequence diagram for every flow.
+- Hand-writing `.config.kiro`, or starring a top-level task.
 - Making every test mandatory on the Free plan, or having no required test for the core rule.
-- Using a quick spec for a bug, or for a decision that has not been made yet.
-- Pressing "Run all tasks" on the last few credits of the month.
+- "Run all tasks" on the last few credits, re-reading steering already in context, or scanning the codebase "for context".
+- Treating a stage name ("dev", "demo") as protection. An API without auth is public to anyone with the URL.
 
 ## Related skills
 
-- `architecture-selection` owns the stack and AWS service choices and records them in `.kiro/steering/tech.md`, `.kiro/steering/structure.md` and `docs/decisions/`. Hand off whenever the feature needs something not recorded there.
-- `bug-fix` owns reproducing, finding the root cause of, fixing and regression-testing defects in existing behavior. Hand off whenever the request describes something that is broken rather than something new.
+- `architecture-selection` owns the stack and AWS service choices and records them in `.kiro/steering/tech.md`, `.kiro/steering/structure.md` and `docs/decisions/`. Hand off whenever the feature needs something not recorded there; a small addition comes back in one turn through its short path, then continue here.
+- `bug-fix` owns reproducing, finding the root cause of, fixing and regression-testing defects in existing behavior. Hand off whenever the request describes something that is broken rather than something new. `bug-fix` hands back here when a fix needs a contract, key-schema or index change, or the correct behavior was never specified.
 - The full Kiro spec flow (Specs, then +, then Feature) is for features beyond the Phase 1 limits.

@@ -2,7 +2,7 @@
 
 This is a complete model answer for the `quick-spec` skill. It is **illustrative only**: the stack and folder names below are assumptions made for the example. In a real run, take them from `.kiro/steering/tech.md` and `.kiro/steering/structure.md`. Never copy this example's choices into a real spec without checking the steering files.
 
-Assumed stack for this example: a React single-page app, an API Gateway HTTP API, Lambda (Node.js, TypeScript), DynamoDB, and infrastructure as code with the tool named in `tech.md`. The assumed folders are `frontend/`, `backend/`, `shared/`, `infra/`, `scripts/` and `docs/`.
+Assumed stack for this example: a React single-page app already hosted on HTTPS, an API Gateway HTTP API, Lambda (Node.js, TypeScript), DynamoDB, and infrastructure as code with the tool named in `tech.md`. The assumed folders are `frontend/`, `backend/`, `shared/`, `infra/`, `scripts/` and `docs/`.
 
 ## The request
 
@@ -21,7 +21,7 @@ Assumed stack for this example: a React single-page app, an API Gateway HTTP API
 Quick spec for "attendee check-in by QR". I'll write the 3 files after one answer from you.
 Reply "ok" to accept all defaults, or change only what's wrong:
 1. QR contains only an opaque random ticket ID (no name/email)? Default: yes
-2. Staff login is out of scope; the API runs in the dev stage for the demo only? Default: yes
+2. Staff login is out of scope, so the API is public and holds only fake data until teardown? Default: yes
 3. Manual ticket-ID entry when the camera fails? Default: yes
 4. Count refresh: polling every 15 s is enough (no WebSockets)? Default: yes
 Out of scope unless you say otherwise: registration, emailing QR codes, offline queue, multi-event.
@@ -88,7 +88,7 @@ Stack and conventions follow `.kiro/steering/tech.md` and `.kiro/steering/struct
 #### Acceptance Criteria
 
 1. IF camera access is denied or unavailable, THEN THE Scanner_Page SHALL show a manual Ticket_Id entry field that submits to the same Checkin_Api route.
-2. IF a Checkin_Api request fails or times out, THEN THE Scanner_Page SHALL show "Network error - tap to retry" and SHALL NOT show a success state.
+2. IF a Checkin_Api request fails, times out or returns a 5xx status, THEN THE Scanner_Page SHALL show "Network error - tap to retry" and SHALL NOT show a success state.
 3. IF the decoded QR text is not a well-formed Ticket_Id, THEN THE Scanner_Page SHALL show "Not an event ticket" without calling the Checkin_Api.
 
 ### Requirement 4: Recent check-ins on this device (stretch)
@@ -102,10 +102,11 @@ Stack and conventions follow `.kiro/steering/tech.md` and `.kiro/steering/struct
 ## Assumptions
 
 - A1: The QR code encodes only the Ticket_Id; the seed script generates the Ticket_Ids and the printable QR codes.
-- A2: Staff authentication is out of scope; the Checkin_Api is deployed only to the dev stage for the demo.
+- A2: Staff authentication is out of scope. The Checkin_Api is therefore public to anyone with its URL, so it holds only fake data and is torn down after the demo.
 - A3: One event per deployment.
 - A4: All attendee data in the demo is fake, created by the seed script.
 - A5: The QR decoding and generation libraries are the ones recorded in `tech.md`.
+- A6: The frontend is already hosted on HTTPS by the walking-skeleton spec, using the hosting recorded in `tech.md`.
 
 ## Out of Scope
 
@@ -125,8 +126,7 @@ Stack and conventions follow `.kiro/steering/tech.md` and `.kiro/steering/struct
 ## Overview
 
 A phone browser opens the Scanner_Page, decodes a QR code to a Ticket_Id and calls `POST /checkins`. A Lambda function records the check-in and increments the Checkin_Counter in one DynamoDB transaction, so a ticket can be checked in only once and the count always matches. The page shows the result and polls `GET /checkins/count` for check-ins made on other devices.
-Relies on: `tech.md` (React, API Gateway HTTP API, Lambda Node.js/TypeScript, DynamoDB, the IaC tool) and `structure.md` (`frontend/`, `backend/`, `shared/`, `infra/`, `scripts/`).
-Related specs: none.
+Relies on: `tech.md` (React with HTTPS hosting, API Gateway HTTP API, Lambda Node.js/TypeScript, DynamoDB, the IaC tool) and `structure.md` (`frontend/`, `backend/`, `shared/`, `infra/`, `scripts/`).
 
 ## Architecture
 
@@ -145,9 +145,10 @@ flowchart LR
 
 - A conditional update (`attribute_exists(ticketId) AND attribute_not_exists(checkedInAt)`) inside a DynamoDB transaction blocks a second check-in, even when two scanners race (1.4).
 - The counter item is updated in the same transaction as the attendee, so the count is a single GetItem with no Scan (2.1, 2.3).
-- When the transaction is cancelled, the function reads the attendee item: no item means 404 and an existing item means 409 with the stored checkedInAt (1.3, 1.4).
+- When the transaction is cancelled, the function checks the cancellation reason for the attendee item. `ConditionalCheckFailed` means it reads the item: no item gives 404, and an item with checkedInAt gives 409 with the stored time (1.3, 1.4). Any other reason (for example `TransactionConflict`, when two scans update the counter item at the same moment) is retried once and then returns 503, which the page treats as a retryable error (3.2).
 - Polling every 15 seconds instead of WebSockets keeps this a quick spec. Real-time push would be a decision for architecture-selection.
 - One Ticket_Id regular expression lives in the shared contract and is used by both the page (3.3) and the API (400 response).
+- Phone browsers allow camera access only on HTTPS pages (localhost is the exception), so the demo uses the deployed HTTPS frontend URL, not a laptop dev server opened over the venue Wi-Fi.
 
 ## Components and Interfaces
 
@@ -176,17 +177,16 @@ flowchart LR
 Access patterns:
 - AP1: check in by Ticket_Id. A transaction updates the attendee item (with the condition above) and adds 1 to `checkedInCount` on `#COUNTER`.
 - AP2: read the count with GetItem `#COUNTER`.
-- AP3: after a cancelled transaction, run GetItem on the Ticket_Id to choose between 404 and 409.
+- AP3: after a transaction cancelled by `ConditionalCheckFailed` on the attendee item, run GetItem on the Ticket_Id to choose between 404 and 409.
 
 Example records (fake data):
-`{ "ticketId": "k7Q2xV9pLm3T", "displayName": "Test Attendee 042" }`
-`{ "ticketId": "#COUNTER", "checkedInCount": 0 }`
+`{ "ticketId": "k7Q2xV9pLm3T", "displayName": "Test Attendee 042" }` and `{ "ticketId": "#COUNTER", "checkedInCount": 0 }`
 
 ## API Contract
 
 ### POST /checkins
 
-Auth: none (dev stage demo only; see A2). CORS allows the frontend origin from the `ALLOWED_ORIGIN` environment variable.
+Auth: none, so the route is public (see A2). CORS is configured on the HTTP API and allows only the frontend origin.
 
 Request:
 `{ "ticketId": "k7Q2xV9pLm3T" }`
@@ -197,37 +197,12 @@ Request:
 | 400 | `{ "error": "invalid_ticket_id" }` | Malformed Ticket_Id (server-side check of 3.3) |
 | 404 | `{ "error": "ticket_not_found" }` | 1.3 |
 | 409 | `{ "status": "already_checked_in", "displayName": "Test Attendee 042", "checkedInAt": "<original ISO-8601>" }` | 1.4 |
-| 500 | `{ "error": "internal" }` | Unexpected failure; details go to the logs only |
+| 500 | `{ "error": "internal" }` | Unexpected failure; details go to the logs only (3.2) |
+| 503 | `{ "error": "busy_retry" }` | Transaction cancelled for a reason other than the condition, after one retry (3.2) |
 
 ### GET /checkins/count
 
-| Status | Body | When (criterion) |
-|---|---|---|
-| 200 | `{ "count": 42 }` | 2.1, 2.4 |
-
-## Error Handling
-
-| Scenario | Detection | Response to user | Criterion |
-|---|---|---|---|
-| Unknown Ticket_Id | Transaction cancelled, then GetItem finds no item | "Ticket not found" | 1.3, 1.5 |
-| Already checked in | Transaction cancelled, then GetItem finds an item with checkedInAt | "Already checked in at <local time>" | 1.4, 1.6 |
-| Camera denied or missing | Camera permission or device error in the browser | Manual entry field | 3.1 |
-| Network failure or timeout | Client request rejects or times out | "Network error - tap to retry" | 3.2 |
-| QR is not a ticket | Regex check on the page | "Not an event ticket" | 3.3 |
-
-## AWS Notes
-
-- IAM: postCheckin needs only the DynamoDB actions it uses (UpdateItem, GetItem) on Attendee_Table, and getCount needs only GetItem on it. Confirm in the DynamoDB IAM documentation exactly which actions a transaction requires.
-- Config and secrets: the IaC sets `TABLE_NAME` and `ALLOWED_ORIGIN` on the functions. No secrets are needed.
-- CORS and auth: the HTTP API allows `ALLOWED_ORIGIN` only. There is no auth, so deploy to the dev stage only (A2).
-- Cost: small and request-driven. Check current pricing for the capacity mode `tech.md` chooses, and delete the dev stack after the event.
-- Personal data: only `displayName`, and it is fake in the demo. No email, phone or IC number is stored.
-
-## Testing Strategy
-
-- Required: `backend/test/checkin/postCheckin.test.ts` checks the status mapping for 200, 400, 404 and 409 with a mocked repo (1.1, 1.3, 1.4).
-- Optional: component tests for the result states; the property tests below, using the property-testing library named in `tech.md`.
-- Demo path check: seed 50 fake attendees and print 3 QR codes. Scan code 1 (success, count goes up), scan code 1 again (already checked in), scan any non-ticket QR (not an event ticket), type an unknown ID (ticket not found), then switch on airplane mode and scan (network error).
+Auth and CORS as above. 200 returns `{ "count": 42 }` (2.1, 2.4); other failures return 500.
 
 ## Correctness Properties
 
@@ -242,6 +217,31 @@ Request:
 *For any* set of check-in requests, Checkin_Counter equals the number of attendee items that have checkedInAt.
 
 **Validates: Requirements 2.3**
+
+## Error Handling
+
+| Scenario | Detection | Response to user | Criterion |
+|---|---|---|---|
+| Unknown Ticket_Id | Transaction cancelled by `ConditionalCheckFailed`, then GetItem finds no item | "Ticket not found" | 1.3, 1.5 |
+| Already checked in | Transaction cancelled by `ConditionalCheckFailed`, then GetItem finds an item with checkedInAt | "Already checked in at <local time>" | 1.4, 1.6 |
+| Camera denied or missing | Camera permission or device error in the browser | Manual entry field | 3.1 |
+| Network failure, timeout or 5xx | Client request rejects, times out or gets 500/503 | "Network error - tap to retry" | 3.2 |
+| Concurrent update of the counter item | Cancellation reason is not `ConditionalCheckFailed` | Retried once by the function, then 503 | 3.2 |
+| QR is not a ticket | Regex check on the page | "Not an event ticket" | 3.3 |
+
+## AWS Notes
+
+- IAM: postCheckin needs only the DynamoDB actions it uses (UpdateItem, GetItem) on Attendee_Table, and getCount needs only GetItem on it. Confirm in the DynamoDB IAM documentation exactly which actions a transaction requires.
+- Config and secrets: the IaC sets `TABLE_NAME` on both functions. No secrets are needed.
+- CORS and auth: CORS is set on the HTTP API only (allowed origin = the frontend URL, an IaC parameter), not in the handlers. There is no auth, so the URL is public: fake data only, throttling limits on the stage, and teardown after the demo (A2).
+- Cost: small and request-driven. Check current pricing for the capacity mode `tech.md` chooses, and delete the stack after the event.
+- Personal data: only `displayName`, and it is fake in the demo. No email, phone or IC number is stored.
+
+## Testing Strategy
+
+- Required: `backend/test/checkin/postCheckin.test.ts` checks the status mapping for 200, 400, 404, 409 and 503 with a mocked repo (1.1, 1.3, 1.4, 3.2).
+- Optional: component tests for the result states; the property tests above, using the property-testing library named in `tech.md` and tagged `Feature: attendee-checkin, Property <N>: <title>`.
+- Demo path check, on a phone using the deployed HTTPS frontend: seed 50 fake attendees and print 3 QR codes. Scan code 1 (success, count goes up), scan code 1 again (already checked in), scan any non-ticket QR (not an event ticket), type an unknown ID (ticket not found), then switch on airplane mode and scan (network error).
 ````
 
 ---
@@ -253,11 +253,11 @@ Request:
 
 ## Overview
 
-Agree on the contract first (task 1.1). Then the three streams run in parallel: the frontend works against mocks while the backend and infrastructure are built. The integration checkpoint switches the page to the deployed dev API and runs the demo path.
+Agree on the contract first (task 1.1). Then the three streams run in parallel: the frontend works against mocks while the backend and infrastructure are built. The integration checkpoint switches the page to the deployed API and runs the demo path.
 
 | Stream | Owner | Folders owned | Est. |
 |---|---|---|---|
-| FE | @A | `frontend/` | 3h (+45m optional) |
+| FE | @A | `frontend/` | 3h (+1.5h optional) |
 | BE | @B | `backend/src/checkin/`, `backend/test/checkin/postCheckin.test.ts`, `shared/contracts/` | 2.75h |
 | INFRA/QA | @C | `infra/`, `scripts/`, `docs/demo/`, `backend/test/checkin/checkin.property.test.ts` | 2.75h (+1h optional) |
 
@@ -269,7 +269,7 @@ Shared hot files and their single owner: `frontend/package.json` and the fronten
   - [ ] 1.1 Define the check-in contract, Ticket_Id regex and mocks
     - Owner: @B | Stream: BE | Est: 45m | Depends on: none
     - Files: shared/contracts/checkin.ts, shared/contracts/checkin.mock.ts
-    - Done when: types compile, and mocks exist for 200, 400, 404, 409 and a network error
+    - Done when: types compile, and mocks exist for 200, 400, 404, 409, 503 and a network error
     - _Requirements: 1.1, 1.3, 1.4, 2.1, 3.3_
 
 - [ ] 2. Checkpoint - Contract agreed
@@ -290,13 +290,17 @@ Shared hot files and their single owner: `frontend/package.json` and the fronten
     - Owner: @A | Stream: FE | Est: 45m | Depends on: 3.2
     - Files: frontend/src/components/scan/ScanResult.test.tsx
     - _Requirements: 1.5, 1.6, 3.2_
+  - [ ]* 3.4 Show the recent check-ins list on this device (stretch; only after Checkpoint 6)
+    - Owner: @A | Stream: FE | Est: 45m | Depends on: 6
+    - Files: frontend/src/components/scan/RecentCheckins.tsx
+    - _Requirements: 4.1_
 
 - [ ] 4. Backend stream
   - [ ] 4.1 Implement the POST /checkins handler with a transactional conditional write
     - Owner: @B | Stream: BE | Est: 1.5h | Depends on: 1.1
     - Files: backend/src/checkin/postCheckin.ts, backend/src/checkin/repo.ts, backend/test/checkin/postCheckin.test.ts
-    - Done when: the required unit test for the 200/400/404/409 mapping passes
-    - _Requirements: 1.1, 1.3, 1.4, 2.3_
+    - Done when: the required unit test for the 200/400/404/409/503 mapping passes, including a cancellation that is not a condition failure
+    - _Requirements: 1.1, 1.3, 1.4, 2.3, 3.2_
   - [ ] 4.2 Implement the GET /checkins/count handler
     - Owner: @B | Stream: BE | Est: 30m | Depends on: 4.1
     - Files: backend/src/checkin/getCount.ts
@@ -307,7 +311,7 @@ Shared hot files and their single owner: `frontend/package.json` and the fronten
   - [ ] 5.1 Define the table, two routes, functions, IAM and CORS in IaC
     - Owner: @C | Stream: INFRA | Est: 1.5h | Depends on: 1.1
     - Files: infra/ check-in module, infra stack entry
-    - Done when: the stack is deployed to the dev stage and both routes respond (stub handlers are fine until 4.x is merged)
+    - Done when: the stack is deployed, both routes respond (stub handlers are fine until 4.x is merged), CORS allows only the frontend origin and stage throttling is set
     - _Requirements: 1.1, 2.1_
   - [ ] 5.2 Write the seed script for fake attendees, the counter item and a printable QR sheet
     - Owner: @C | Stream: QA | Est: 1h | Depends on: 5.1
@@ -327,16 +331,10 @@ Shared hot files and their single owner: `frontend/package.json` and the fronten
     - _Requirements: 1.4, 2.3_
 
 - [ ] 6. Checkpoint - Integration
-  - Merge in the order 5.1, then 4.x, then 3.x. Set the frontend API base URL to the dev stage and run docs/demo/attendee-checkin.md end to end, including one error path. Ensure all tests pass, ask the user if questions arise.
+  - Merge in the order 5.1, then 4.x, then 3.x. Set the frontend API base URL to the deployed API and run docs/demo/attendee-checkin.md end to end on a phone, including one error path. Ensure all tests pass, ask the user if questions arise.
 
-- [ ]* 7. Stretch
-  - [ ]* 7.1 Show the recent check-ins list on this device
-    - Owner: @A | Stream: FE | Est: 45m | Depends on: 6
-    - Files: frontend/src/components/scan/RecentCheckins.tsx
-    - _Requirements: 4.1_
-
-- [ ] 8. Checkpoint - Final
-  - Run the demo path on the dev stage once more, add a line to the README on how to open /scan, and list the AWS resources to delete after the event. Ensure all tests pass, ask the user if questions arise.
+- [ ] 7. Checkpoint - Final
+  - Run the demo path on the deployed stack once more, add a line to the README on how to open /scan, and list the AWS resources to delete after the event. Ensure all tests pass, ask the user if questions arise.
 
 ## Notes
 
@@ -345,14 +343,15 @@ Shared hot files and their single owner: `frontend/package.json` and the fronten
 - Checkpoints ensure incremental validation; cross-stream dependencies happen only at checkpoints.
 - Start tasks one at a time in priority order; on the Free plan avoid "Run all tasks" unless enough credits remain.
 - A teammate may implement a task by hand and tick its box; that uses no credits.
-- Branches: `feat/attendee-checkin-fe`, `feat/attendee-checkin-be`, `feat/attendee-checkin-infra`; merge task 1.1 first.
+- Branches: `feature/attendee-checkin-fe`, `feature/attendee-checkin-be`, `feature/attendee-checkin-infra`; merge task 1.1 first.
+- Task 5.3 and the README line in task 7 are quick to do by hand, which saves credits.
 ````
 
 ---
 
 ## Self-check result for this example
 
-- Every criterion is covered by a non-optional task: 1.1 (1.1, 4.1, 5.1, 5.2), 1.2 (3.2), 1.3 (4.1), 1.4 (4.1), 1.5 (3.2), 1.6 (3.2), 2.1 (3.2, 4.2, 5.1), 2.2 (3.2), 2.3 (4.1, 5.2), 2.4 (3.2, 4.2), 3.1 (3.1), 3.2 (3.2), 3.3 (3.1). Only 4.1, the stretch goal, is optional.
+- Every criterion is covered by a non-optional task: 1.1 (1.1, 4.1, 5.1, 5.2), 1.2 (3.2), 1.3 (4.1), 1.4 (4.1), 1.5 (3.2), 1.6 (3.2), 2.1 (3.2, 4.2, 5.1), 2.2 (3.2), 2.3 (4.1, 5.2), 2.4 (3.2, 4.2), 3.1 (3.1), 3.2 (3.2, 4.1), 3.3 (3.1). Only criterion 4.1, the stretch goal, is left to optional tasks (3.4).
 - There are 11 leaf tasks (3 of them optional), all 2 hours or less, with no file shared between parallel tasks. The required-work estimates are FE 3h, BE 2.75h and INFRA/QA 2.75h.
 - No service outside the assumed `tech.md` is used, and no real personal data appears.
 
@@ -361,7 +360,7 @@ Shared hot files and their single owner: `frontend/package.json` and the fronten
 ```text
 Quick spec ready: .kiro/specs/attendee-checkin/
 - 4 requirements, 14 criteria, 11 tasks (3 optional), 3 checkpoints
-- Assumptions: A1 QR holds only ticket ID; A2 no staff login, dev stage only  (reply to change; I'll edit only those lines)
+- Assumptions: A1 QR holds only ticket ID; A2 no staff login, so public API with fake data only  (reply to change; I'll edit only those lines)
 - Streams: @A FE 3h | @B BE 2.75h | @C INFRA/QA 2.75h  -> critical path about 4h (contract, then FE)
 - Start: task 1.1 (@B), then each owner starts their stream after Checkpoint 2
 - In Kiro: Specs section -> attendee-checkin -> tasks.md -> Start task on your next task

@@ -1,6 +1,6 @@
 # Quick Spec Templates
 
-These are copy-paste skeletons for the three files in `.kiro/specs/<feature-name>/`. Replace every `<...>` placeholder, and delete any optional section that would say nothing. The headings follow the layout Kiro's own spec flow generates, so keep them as they are.
+These are copy-paste skeletons for the three files in `.kiro/specs/<feature-name>/`. Replace every `<...>` placeholder, and delete any optional section that would say nothing. The headings follow the layout of Kiro-generated specs, plus a few additions (`## Assumptions` and `## Out of Scope` in requirements.md; `## API Contract` and `## AWS Notes` in design.md). Keep the Kiro headings as they are.
 
 Length targets: `requirements.md` about 80 lines or fewer, `design.md` about 120 or fewer, `tasks.md` about 100 or fewer.
 
@@ -119,7 +119,7 @@ Example record (fake data):
 
 ### <METHOD> <path>
 
-Auth: <mode from tech.md | none (dev stage demo only; see Out of Scope)>
+Auth: <mode from tech.md | none: the URL is public, so this route holds fake data only (see Out of Scope)>
 
 Request:
 `{ "<field>": "<type/example>" }`
@@ -130,6 +130,17 @@ Responses:
 | 200 | `{ "status": "<...>", ... }` | <1.1> |
 | 400 | `{ "error": "<code>" }` | <malformed input> |
 | 404 | `{ "error": "<code>" }` | <1.3> |
+| 500 | `{ "error": "internal" }` | <unexpected failure; details go to logs only> |
+
+## Correctness Properties
+
+<Delete this section unless the feature has pure logic worth property testing.>
+
+### Property 1: <title>
+
+*For any* <input class>, <property that must hold>.
+
+**Validates: Requirements <x.y>**
 
 ## Error Handling
 
@@ -142,6 +153,7 @@ Responses:
 
 - IAM: <function> -> <actions> on <one resource>.
 - Config/secrets: <env vars and where they come from; no secrets in code>.
+- Lambda: <timeout and memory set explicitly for slow calls | defaults fine>.
 - CORS/auth: <...>.
 - Cost: <anything continuous or large; "check current pricing">.
 - Personal data: <what is stored and why | none>.
@@ -149,16 +161,8 @@ Responses:
 ## Testing Strategy
 
 - Required: <the one or two tests that protect the core rule, with file path>.
-- Optional (`*` tasks): <other unit/component tests>.
+- Optional (`*` tasks): <other unit/component tests; property tests tagged with a comment `Feature: <feature-name>, Property <N>: <title>`>.
 - Demo path check: <the exact click or curl sequence used at the integration checkpoint>.
-
-## Correctness Properties (optional - only for pure logic worth property testing)
-
-### Property 1: <title>
-
-*For any* <input class>, <property that must hold>.
-
-**Validates: Requirements <x.y>**
 ````
 
 ### AWS design checklist (for the `## AWS Notes` section)
@@ -166,12 +170,13 @@ Responses:
 Write one line per item that applies, or "n/a". Use only facts from `tech.md` or the teammate; do not add quotas, prices or region codes from memory.
 
 - **Services:** use only those in `tech.md`. Anything new means stopping and handing off to `architecture-selection`.
-- **IAM:** give each Lambda function or role least-privilege access, naming the actions and the one resource it touches (for example `dynamodb:UpdateItem` on the `Attendees` table). Where unsure which actions an API call needs, write "confirm in the service's IAM documentation".
+- **IAM:** give each Lambda function or role least-privilege access, naming the actions and the one resource it touches (for example `dynamodb:UpdateItem` on the `Attendees` table). Where unsure which actions an API call needs, write "confirm in the service's IAM documentation". Never plan `*` actions or resources as the way to clear an AccessDenied; add the one missing action instead.
 - **Config and secrets:** keep no keys, passwords or account IDs in code or the spec. Use environment variables, filled from SSM Parameter Store or Secrets Manager as `tech.md` prescribes.
-- **API Gateway:** set CORS when the frontend is served from another origin. State the auth mode, or list auth explicitly under Out of Scope (and say the API is deployed to a dev stage only).
-- **DynamoDB:** derive the keys from the listed access patterns. Use conditional writes (or a transaction) for "only once" rules. Never put a Scan on the request hot path.
-- **S3:** keep buckets private. Use presigned URLs for browser upload and download.
-- **Bedrock (if used):** model access must be enabled for the account, and model availability differs by region, so check before relying on a model. Keep prompts in a versioned file, and write an `IF ..., THEN` criterion for throttling or model errors.
+- **Lambda:** set the timeout and memory explicitly for functions that call slow services (Bedrock, external APIs); the default timeout is only a few seconds.
+- **API Gateway:** set CORS when the frontend is served from another origin, in one place only (the API's CORS settings or the handler's response headers, as `tech.md` says). State the auth mode, or list auth under Out of Scope. An API without auth is public to anyone with the URL whatever the stage is called, so it holds fake data only, gets throttling limits on its stage or routes, and is torn down after the event.
+- **DynamoDB:** derive the keys from the listed access patterns. Use conditional writes (or a transaction) for "only once" rules, and map a failed condition to a clear status (usually 409). A transaction can also be cancelled because another request touched the same item at the same time (common with a shared counter item), so check the cancellation reasons before choosing the status. Never put a Scan on the request hot path.
+- **S3:** keep buckets private. Use presigned URLs for browser upload and download; browser uploads also need a CORS rule on the bucket.
+- **Bedrock (if used):** model availability differs by region, so confirm in the Bedrock console that the account can invoke the chosen model in the region in `tech.md` before relying on it. Read the model ID from configuration, keep prompts in a versioned file, set a max-token limit, and write an `IF ..., THEN` criterion for throttling or model errors. If a model call can be slow, check it against the API Gateway integration timeout; streaming or an async pattern is a decision for `architecture-selection`.
 - **Region and naming:** follow `tech.md`. Do not hardcode a region in application code; read it from configuration.
 - **Cost:** name anything that runs continuously or stores large files, and add "check current pricing". Do not put cost estimates in the spec. List resources to delete after the event.
 - **Personal data:** store the minimum and say what is stored and why. If names, emails, phone numbers or IC numbers are kept, note that consent may be needed (Malaysia has a Personal Data Protection Act) and check with the organizers. Never use an IC number as an identifier. Use fake data in mocks and seed scripts.
@@ -218,6 +223,10 @@ Shared hot files and their single owner: `<package manifest>` -> <owner>, `<IaC 
     - Files: <paths>
     - Done when: <each error state can be triggered with mocks>
     - _Requirements: <x.y>_
+  - [ ]* 3.3 <Stretch task (stretch requirement); only after Checkpoint 6>
+    - Owner: @A | Stream: FE | Est: <h> | Depends on: 6
+    - Files: <paths>
+    - _Requirements: <N.1>_
 
 - [ ] 4. Backend stream
   - [ ] 4.1 <Handler + business rule>
@@ -234,7 +243,7 @@ Shared hot files and their single owner: `<package manifest>` -> <owner>, `<IaC 
   - [ ] 5.1 <Table/bucket, routes, IAM in IaC>
     - Owner: @C | Stream: INFRA | Est: <h> | Depends on: 1.1
     - Files: <infra paths>
-    - Done when: <deployed to dev stage; route returns mock or real response>
+    - Done when: <stack deployed; each route returns a stub or real response>
     - _Requirements: <x.y>_
   - [ ] 5.2 <Seed script with fake data + demo script>
     - Owner: @C | Stream: QA | Est: <h> | Depends on: 5.1
@@ -243,14 +252,9 @@ Shared hot files and their single owner: `<package manifest>` -> <owner>, `<IaC 
     - _Requirements: <x.y>_
 
 - [ ] 6. Checkpoint - Integration
-  - Point the frontend at the deployed dev API instead of mocks, run the demo path from the demo script, and trigger one error path. Ensure all tests pass, ask the user if questions arise.
+  - Point the frontend at the deployed API instead of mocks, run the demo path from the demo script, and trigger one error path. Ensure all tests pass, ask the user if questions arise.
 
-- [ ]* 7. Stretch
-  - [ ]* 7.1 <Stretch task>
-    - Owner: <@X> | Stream: <..> | Est: <h> | Depends on: 6
-    - _Requirements: <N.1>_
-
-- [ ] 8. Checkpoint - Final
+- [ ] 7. Checkpoint - Final
   - Run the demo path on the deployed environment once more, update README/demo notes, and list the AWS resources to clean up. Ensure all tests pass, ask the user if questions arise.
 
 ## Notes
@@ -260,7 +264,10 @@ Shared hot files and their single owner: `<package manifest>` -> <owner>, `<IaC 
 - Checkpoints ensure incremental validation; cross-stream dependencies happen only at checkpoints.
 - Start tasks one at a time in priority order; on the Free plan avoid "Run all tasks" unless enough credits remain.
 - A teammate may implement a task by hand and tick its box; that uses no credits.
-- Branches: `feat/<feature-name>-fe`, `feat/<feature-name>-be`, `feat/<feature-name>-infra`; merge task 1.1 first.
+- Branches (or the convention in `structure.md`): `feature/<feature-name>-fe`, `feature/<feature-name>-be`, `feature/<feature-name>-infra`; merge task 1.1 first.
+- Mechanical tasks (seed data, demo script, README lines) are cheaper done by hand or with one short chat prompt.
 ````
 
 The outer four-backtick fences only wrap the templates in this file. Do not copy them into the spec files. The Mermaid block in `design.md` is a normal three-backtick fenced block.
+
+Stretch tasks are optional sub-tasks (`- [ ]*`) placed last in the owning stream. Do not put `*` on a top-level task: Kiro's own specs only star sub-tasks.

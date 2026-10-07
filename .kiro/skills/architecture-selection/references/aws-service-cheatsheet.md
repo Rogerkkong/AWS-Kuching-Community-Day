@@ -1,10 +1,29 @@
 # AWS Service Cheat Sheet (hackathon edition)
 
-Read this file during architecture-selection when a service choice is unclear (Phase 2) or when you prepare the guardrails (Phase 6). It helps you get oriented. It does not set prices or limits.
+Read this file during architecture-selection when mapping must-haves or a service choice is unclear (Phase 2), when proposing a Bedrock spike (Phase 4), or when preparing the guardrails (Phase 6). Read only the section you need. It helps you get oriented; it does not set prices or limits.
 
 - This sheet deliberately contains no prices and few numbers. Before committing, check the service's pricing page, the Free Tier page in the Billing console, and regional availability.
-- AWS changed its Free Tier for new accounts in 2025 to a credit-based model, while older accounts keep the earlier offers. Check what your own account has.
+- AWS changed its Free Tier for new accounts in 2025 to a credit-based model, while older accounts keep the earlier offers. Check what your own account has. An account on the newer free plan may have some services or third-party models restricted until it is upgraded; the Phase 4 spike is where you find out.
 - Events and student programs sometimes provide AWS credits. Ask the organisers.
+
+## 0. Quick picks by need (Phase 2, question 6)
+
+Default first; use the alternative only when its reason applies. Add only the services the demo needs.
+
+| Need | Default | Instead, when |
+|---|---|---|
+| Login | Cognito user pool (Amplify Auth in option B); HTTP API JWT authorizer | Demo-only with no personal data: a fixed demo user, stated in the ADR |
+| File/photo upload | S3 presigned upload from the browser; S3 event to Lambda for processing | Option B: Amplify Storage |
+| Real-time updates | Option B: Amplify Data subscriptions. Option A: AppSync or API Gateway WebSocket API | Polling every few seconds is fine for a demo |
+| GenAI text/chat | Bedrock Converse API from Lambda; model ID in `MODEL_ID` | Option B: the Amplify AI kit, after checking it supports the model and region |
+| GenAI over documents | Put the few relevant documents in the prompt | Bedrock Knowledge Bases, only if the documents do not fit; its vector store can bill while idle |
+| Image/document understanding | A Bedrock model that accepts image input | Rekognition (labels, moderation) or Textract (forms, tables) |
+| Speech or translation | Transcribe, Translate, Polly | Check language support first (section 6) |
+| Maps/location | Amazon Location Service | A static map image if location is decoration |
+| Notifications | In-app; email through SES (sandbox rules apply) | SMS only if required (country registration rules) |
+| Scheduled or slow jobs | EventBridge Scheduler or SQS to Lambda | Step Functions for multi-step flows judges can see; a Fargate task for work over Lambda's 15 minutes |
+| Database | DynamoDB (on-demand), designed around the demo's access patterns | Aurora/RDS when the team only knows SQL or the data needs joins; it brings a VPC and hourly cost |
+| Mobile app | Responsive web app or PWA | Native (e.g. React Native) only if a teammate has shipped one |
 
 **Cost shape legend:**
 
@@ -18,15 +37,15 @@ Read this file during architecture-selection when a service choice is unclear (P
 
 | Service | Use it for | Gotchas | Cost shape |
 |---|---|---|---|
-| Amplify Hosting | Git-connected deploys of a SPA or SSR app (e.g. Next.js), with a preview per branch | Build settings live in `amplify.yml`. Environment variables are set per branch in the console. | per build minute + per-GB |
-| S3 + CloudFront | Static SPA build output (Vite/React) | Keep the bucket private and use Origin Access Control. SPA deep links need the error response mapped to `index.html`. A custom-domain certificate for CloudFront must be in `us-east-1`. Invalidate the cache after a deploy. | per-GB + per-request |
+| Amplify Hosting | Git-connected deploys of a SPA or SSR app (e.g. Next.js), with a preview per branch; manual zip upload also works without Git | Build settings live in `amplify.yml`. Environment variables are set per branch in the console. For SSR, check which framework versions are supported. | per build minute + per-GB (+ SSR requests) |
+| S3 + CloudFront | Static SPA build output (Vite/React) | Keep the bucket private and use Origin Access Control. SPA deep links need CloudFront error responses for 403 and 404 mapped to `/index.html` with status 200 (a private bucket returns 403 for missing keys). A custom-domain certificate for CloudFront must be in `us-east-1`. Invalidate the cache after a deploy. | per-GB + per-request |
 
 ## 2. Compute
 
 | Service | Use it for | Gotchas | Cost shape |
 |---|---|---|---|
-| AWS Lambda | API handlers, background jobs, Bedrock calls, S3 event processing | 15-minute maximum run time. Set memory and timeout explicitly. Python native dependencies must match the Lambda architecture: build in a container (`sam build --use-container`) or pick pure-Python libraries. Pick arm64 or x86_64 once and keep it. | per-request + duration; check for an always-free allowance |
-| ECS on Fargate | Containerised web apps without managing servers | Needs a VPC, subnets, security groups and usually a load balancer. Private subnets need a NAT gateway (per-hour) or VPC endpoints. Public subnets avoid NAT, but public IPv4 addresses are charged. | per-hour while tasks run, plus the load balancer |
+| AWS Lambda | API handlers, background jobs, Bedrock calls, S3 event processing | 15-minute maximum run time. Set memory and timeout explicitly. Python native dependencies must match the Lambda architecture: build in a container (`sam build --use-container`) or pick pure-Python libraries. Pick arm64 or x86_64 once and keep it. Large libraries can exceed the deployment package size limit; use a container image function instead. New accounts can start with reduced concurrency quotas, so check Service Quotas before a live demo. | per-request + duration; check for an always-free allowance |
+| ECS on Fargate | Containerised web apps without managing servers | Needs a VPC, subnets, security groups and usually a load balancer. Private subnets need a NAT gateway or VPC interface endpoints, both billed per hour. Public subnets avoid NAT, but public IPv4 addresses are charged. | per-hour while tasks run, plus the load balancer |
 | AWS App Runner | Simplest container or web-service hosting | Before choosing it, confirm it is still open to new accounts and available in your region | per-hour of active and provisioned capacity; check pricing |
 | Amazon Lightsail | A traditional server app, fixed-price VPS, simple containers | Separate console, so a weaker "AWS-native" story | monthly plans; check pricing |
 | Amazon EC2 | Full VMs | Avoid for a hackathon unless something specifically needs a VM: you take on patching, SSH keys, security groups and idle cost | per-hour |
@@ -36,7 +55,7 @@ Read this file during architecture-selection when a service choice is unclear (P
 | Service | Use it for | Gotchas | Cost shape |
 |---|---|---|---|
 | API Gateway HTTP API | Default JSON API in front of Lambda | Has a built-in JWT authorizer (works with Cognito) and CORS settings. The integration timeout is about 30 seconds, so long LLM calls need streaming or an async pattern. | per-request |
-| API Gateway REST API | When you need API keys and usage plans, request validation, or other REST-API-only features | More configuration than an HTTP API | per-request |
+| API Gateway REST API | When you need API keys and usage plans, request validation, caching, or other REST-API-only features | More configuration than an HTTP API. Default integration timeout is 29 seconds. | per-request |
 | Lambda function URL | The simplest HTTPS endpoint for a single function; supports response streaming | Auth is either IAM or NONE. With NONE the endpoint is public, so add your own checks. Check streaming support for your runtime (native for Node.js). | Lambda cost only |
 | AWS AppSync (GraphQL) | Real-time subscriptions; it is the backend of Amplify Data | GraphQL has a learning curve if you are not using Amplify | per-request + real-time connection time |
 | API Gateway WebSocket API | Real-time without GraphQL | You manage connection IDs yourself (store them in DynamoDB) | per-message + connection time |
@@ -62,7 +81,7 @@ Read this file during architecture-selection when a service choice is unclear (P
 
 | Service | Use it for | Gotchas | Cost shape |
 |---|---|---|---|
-| Amazon Bedrock | Foundation models (Anthropic, Amazon, Meta and others) behind one API. Use the Converse API (ConverseStream for streaming) for chat-style calls. | Model availability varies by region. Some models are reached through cross-region inference profiles, which can process requests in other regions of the same geography. Confirm model access in the Bedrock console for your region. Always set max tokens. Retry throttling errors with backoff. The IAM permissions needed are `bedrock:InvokeModel`, plus `bedrock:InvokeModelWithResponseStream` for streaming. | per input/output token, varying by model. Start with the smallest model that works. |
+| Amazon Bedrock | Foundation models (Anthropic, Amazon, Meta and others) behind one API. Use the Converse API (ConverseStream for streaming) for chat-style calls, so switching models is a config change. | Model availability varies by region. Some models are reached only through cross-region inference profiles: geographic profiles process requests in other regions of that geography, and global profiles can use any supported region, which matters for data residency. Confirm model access in the Bedrock console for your region. New accounts can have low default quotas; check Service Quotas. Always set max tokens. Retry throttling errors with backoff. IAM: `bedrock:InvokeModel` (Converse) plus `bedrock:InvokeModelWithResponseStream` (ConverseStream), scoped to the model ARN; with an inference profile, allow the profile ARN and the foundation-model ARNs in the regions it routes to. | per input/output token, varying by model; not covered by always-free offers. Start with the smallest model that works. |
 | Bedrock Knowledge Bases | Managed RAG over documents in S3 | Needs a vector store; see the cost note in section 4 | ingestion + queries + vector store |
 | Bedrock Guardrails | Content filters and PII redaction; a good "responsible AI" story for judges | Adds latency, and a policy to tune | per text unit; check pricing |
 | Bedrock agent features (Agents, AgentCore) | When tool-using agent behaviour is itself the demo | Many moving parts. Prefer one direct Converse call unless the agent is the point. | varies |
@@ -70,6 +89,7 @@ Read this file during architecture-selection when a service choice is unclear (P
 | Amazon Textract | OCR plus forms and tables from documents | Async APIs for multi-page PDFs | per page |
 | Amazon Transcribe / Translate / Polly | Speech-to-text, translation, text-to-speech | Check the supported-language list for each service before promising Malay, Chinese or Sarawak languages (e.g. Iban). Test with real samples during the spike. | per second / per character |
 | Amazon Comprehend | Sentiment, entities, PII detection | Language support varies; check it | per unit |
+| Amazon Location Service | Maps, place search/geocoding, routes | Browser access needs an API key or Cognito identity credentials. Check the map data provider's terms and coverage for Sarawak. | per request |
 
 ## 7. Messaging, events and workflows
 
@@ -121,13 +141,30 @@ Read this file during architecture-selection when a service choice is unclear (P
 - Secrets Manager secrets (small, but monthly)
 - Large S3 or CloudWatch Logs data with no retention or lifecycle rules
 
+## Bedrock spike (Phase 4)
+
+At most 30 minutes, run by a teammate signed in with AWS CLI v2 (or by Kiro only if the user approves these exact commands). All are read-only apart from one tiny model call.
+
+```text
+aws bedrock list-foundation-models --region <region> --by-output-modality TEXT --query "modelSummaries[].[modelId,inferenceTypesSupported]"
+aws bedrock list-inference-profiles --region <region> --query "inferenceProfileSummaries[].inferenceProfileId"
+aws bedrock-runtime converse --region <region> --model-id <model-or-profile-id> --messages '[{"role":"user","content":[{"text":"Reply with OK"}]}]' --inference-config '{"maxTokens":20}'
+```
+
+- **Pass:** the last command returns text. For an image feature, repeat the call with a real sample image before you commit.
+- A model that lists only `INFERENCE_PROFILE` must be called with the profile ID, not the model ID.
+- **AccessDenied:** enable model access (or complete the provider's first-use form) in the Bedrock console, or give the caller `bedrock:InvokeModel` on that model or profile. Do not widen IAM to "*".
+- **ValidationException:** usually a wrong model ID for this region, or a model that needs a profile ID.
+- **ThrottlingException:** quotas are low; check Service Quotas, pick another model, or plan retries and a cached fallback answer for the demo.
+- **Fail after 30 minutes:** pick another model or region, or fall back to the runner-up, and record it in the ADR.
+
 ## Region check (Phase 6)
 
 1. Pick the home region. Usual candidates for a team in Kuching:
    - `ap-southeast-1` (Singapore): broad service catalogue, close by.
    - `ap-southeast-5` (Asia Pacific (Malaysia)): data stays in Malaysia and latency is local. Newer regions can lack some services or models.
    - `us-east-1` (N. Virginia): often the widest catalogue and the first region for new models. It is far away, and data leaves the region.
-2. For every chosen service, switch the console to the home region and confirm the service opens, or check the AWS services-by-region list.
+2. For every chosen service, switch the console to the home region and confirm the service opens, or check the AWS services-by-region list. From the CLI: `aws ssm get-parameters-by-path --path /aws/service/global-infrastructure/regions/<region>/services --query "Parameters[].Value"` lists the services AWS publishes for that region.
 3. Bedrock: in the home region, open the Bedrock console and confirm the exact model ID. Check whether it runs in-region or only through a cross-region inference profile.
 4. Write any exception into `tech.md` under "Exceptions", with the reason.
 
@@ -140,4 +177,4 @@ Read this file during architecture-selection when a service choice is unclear (P
 | Amplify Gen 2 sandbox | `npx ampx sandbox delete`. Delete branch deployments or the app in the Amplify console. |
 | Terraform | `terraform destroy` |
 
-Then check what IaC deliberately leaves behind. Retained S3 buckets and DynamoDB tables are common (CDK, for example, retains some stateful resources by default). Also check CloudWatch log groups, Cognito user pools, ECR images and Knowledge Base vector stores. Search Tag Editor for `project=<name>` to confirm nothing is left.
+CloudFormation cannot delete a non-empty S3 bucket: empty it first (CDK can do this with `autoDeleteObjects` on demo stacks). Then check what IaC deliberately leaves behind. Retained S3 buckets and DynamoDB tables are common (CDK, for example, retains some stateful resources by default). Also check CloudWatch log groups, Cognito user pools, ECR images and Knowledge Base vector stores. Search Tag Editor for `project=<name>` to confirm nothing is left.
