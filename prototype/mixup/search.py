@@ -18,11 +18,13 @@ from pathlib import Path
 from typing import Iterable
 
 from .config import Settings
-from .models import STATUS_SUPERSEDED, Chunk, DocMeta, SearchHit
-from .textutil import expand_query, tokenize
+from .models import STATUS_RECORD, STATUS_SUPERSEDED, Chunk, DocMeta, SearchHit
+from .textutil import detect_language, glossary_terms, tokenize
 
 K1 = 1.5
 B = 0.75
+EXPANSION_WEIGHT = 0.6  # glossary translations count a bit less than the user's own words
+RECORD_PRIOR = 0.85  # minutes/reports rank slightly below rules (circulars, guidelines, SOPs)
 
 
 class BedrockEmbedder:
@@ -137,19 +139,29 @@ class Index:
 
     # -- scoring ----------------------------------------------------------------
 
-    def _bm25(self, i: int, q_tokens: list[str]) -> float:
+    def _bm25(self, i: int, q_weights: dict[str, float]) -> float:
+        """BM25 score of chunk i for weighted query tokens {token: weight}."""
         tf = self._tfs[i]
         n = len(self.chunks)
         dl = self._lens[i] or 1
         score = 0.0
-        for tok in q_tokens:
+        for tok, weight in q_weights.items():
             f = tf.get(tok, 0)
             if not f:
                 continue
             df = self._df.get(tok, 0)
             idf = math.log(1 + (n - df + 0.5) / (df + 0.5))
-            score += idf * (f * (K1 + 1)) / (f + K1 * (1 - B + B * dl / self._avgdl))
+            score += weight * idf * (f * (K1 + 1)) / (f + K1 * (1 - B + B * dl / self._avgdl))
         return score
+
+    @staticmethod
+    def _query_weights(query: str, expand: bool, translation_weight: float) -> dict[str, float]:
+        """User's words get weight 1.0; glossary translations get translation_weight."""
+        weights = {tok: 1.0 for tok in tokenize(query)}
+        if expand:
+            for tok in tokenize(" ".join(glossary_terms(query))):
+                weights.setdefault(tok, translation_weight)
+        return weights
 
     def search(
         self,
@@ -188,23 +200,29 @@ class Index:
 
         best: dict[int, float] = {}
         for query in queries:
-            q_text = expand_query(query) if expand else query
-            q_tokens = list(dict.fromkeys(tokenize(q_text)))  # unique, keep order
-            if not q_tokens:
+            # Translations matter fully for a document in the other language
+            # (English question, Malay circular) and a bit less otherwise.
+            q_lang = detect_language(query)
+            same_lang = self._query_weights(query, expand, EXPANSION_WEIGHT)
+            cross_lang = self._query_weights(query, expand, 1.0)
+            if not same_lang:
                 continue
-            q_set = set(q_tokens)
+            q_set = set(same_lang)
             raw = {}
             meta_cache: dict[str, set[str]] = {}
             for i in candidates:
-                s = self._bm25(i, q_tokens)
+                doc = self.docs[self.chunks[i].doc_id]
+                is_cross = q_lang in ("ms", "en") and doc.language in ("ms", "en") and doc.language != q_lang
+                s = self._bm25(i, cross_lang if is_cross else same_lang)
                 if s <= 0:
                     continue
-                doc_id = self.chunks[i].doc_id
-                if doc_id not in meta_cache:
-                    meta_cache[doc_id] = self._meta_tokens(self.docs.get(doc_id))
-                meta = meta_cache[doc_id]
-                overlap = len(q_set & meta) / len(q_set)
-                raw[i] = s * (1 + 0.3 * overlap)
+                if doc.doc_id not in meta_cache:
+                    meta_cache[doc.doc_id] = self._meta_tokens(doc)
+                overlap = len(q_set & meta_cache[doc.doc_id]) / len(q_set)
+                s *= 1 + 0.3 * overlap  # title / number / tags match
+                if doc.status == STATUS_RECORD:
+                    s *= RECORD_PRIOR
+                raw[i] = s
             scores = self._hybrid(query, raw, candidates)
             for i, s in scores.items():
                 if s > best.get(i, 0.0):

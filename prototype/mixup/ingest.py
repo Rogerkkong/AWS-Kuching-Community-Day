@@ -132,6 +132,10 @@ def _sections(lines: list[str], is_heading) -> list[tuple[str, str]]:
         full_heading = " > ".join(h for h in (pending_heading, heading) if h) if pending_heading else heading
         pending_heading = ""
         out.append((full_heading, body))
+    # A short preamble before the first heading (e.g. a disclaimer line) joins the next section.
+    if len(out) > 1 and out[0][0] == "" and len(out[0][1]) < 300:
+        preamble = out.pop(0)[1]
+        out[0] = (out[0][0], preamble + "\n\n" + out[0][1])
     return out
 
 
