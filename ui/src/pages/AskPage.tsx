@@ -111,6 +111,7 @@ export function AskPage() {
     setError(null);
     setFeedback(null);
     setTab("sources");
+    let finished = false;
     try {
       await askStream(
         query,
@@ -128,18 +129,24 @@ export function AskPage() {
             if (data.section === "actions") setActionsText((s) => s + data.text);
             else setAnswerText((s) => s + data.text);
           } else if (event === "final") {
+            finished = true;
             setFinal(data);
             setPhase("done");
           } else if (event === "error") {
+            finished = true;
             setError(data.message);
             setPhase("error");
           }
         },
         ctrl.signal,
       );
+      if (!finished && !ctrl.signal.aborted) {
+        setError(t(lang, "streamCut"));
+        setPhase("error");
+      }
     } catch (e: any) {
       if (e?.name !== "AbortError") {
-        setError(String(e?.message ?? e));
+        setError(`${t(lang, "askFailed")}: ${String(e?.message ?? e)}`);
         setPhase("error");
       }
     }

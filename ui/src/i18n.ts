@@ -207,6 +207,8 @@ const S = {
   excludedOften: ["Pekeliling dibatalkan yang paling kerap dikecualikan", "Cancelled circulars most often excluded"],
   noData: ["Tiada data lagi.", "No data yet."],
   error: ["Ralat", "Error"],
+  streamCut: ["Sambungan ke pelayan terputus sebelum jawapan lengkap. Cuba sekali lagi.", "The connection to the server closed before the answer finished. Please try again."],
+  askFailed: ["Permintaan gagal", "Request failed"],
   close: ["Tutup", "Close"],
   loading: ["Memuatkan...", "Loading..."],
   apiLine: ["token sesi aktif", "session token active"],

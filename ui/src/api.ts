@@ -67,7 +67,7 @@ export const api = {
 /** Fetch an image with the token header and return an object URL (img src cannot send headers). */
 export async function fetchImage(path: string): Promise<{ url: string; pageCount: number; highlights: number }> {
   const res = await fetch(path, { headers: { "X-Session-Token": token ?? "" } });
-  if (!res.ok) throw new ApiError(res.status, res.statusText);
+  if (!res.ok) throw new ApiError(res.status, `HTTP ${res.status} ${res.statusText}`.trim());
   const blob = await res.blob();
   return {
     url: URL.createObjectURL(blob),
@@ -89,7 +89,15 @@ export async function askStream(
     body: JSON.stringify({ query, include_historical: includeHistorical }),
     signal,
   });
-  if (!res.ok || !res.body) throw new ApiError(res.status, res.statusText);
+  if (!res.ok || !res.body) {
+    let detail = "";
+    try {
+      detail = (await res.text()).slice(0, 300);
+    } catch {
+      /* ignore */
+    }
+    throw new ApiError(res.status, `HTTP ${res.status} ${res.statusText} ${detail}`.trim());
+  }
   const reader = res.body.getReader();
   const decoder = new TextDecoder();
   let buffer = "";

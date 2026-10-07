@@ -129,13 +129,28 @@ def sse(event: str, data: dict) -> str:
 
 def ask_events(state, user: dict, question: str, include_historical: bool = False, baseline: bool = False,
                log: bool = True) -> Iterator[str]:
+    """Never ends silently: any unexpected failure becomes an "error" event and a traceback in the server log."""
+    try:
+        yield from _ask_events(state, user, question, include_historical, baseline, log)
+    except Exception as exc:  # noqa: BLE001
+        import traceback
+
+        traceback.print_exc()
+        yield sse("error", {"message": f"Ralat pelayan / Server error: {type(exc).__name__}: {exc}"})
+
+
+def _ask_events(state, user: dict, question: str, include_historical: bool, baseline: bool,
+                log: bool) -> Iterator[str]:
     settings = state.settings
     client = get_client()
     t0 = time.perf_counter()
     try:
         r = retrieve(state, user, question, include_historical, client, baseline=baseline)
     except Exception as exc:  # noqa: BLE001
-        yield sse("error", {"message": f"Carian gagal / Search failed: {exc}"})
+        import traceback
+
+        traceback.print_exc()
+        yield sse("error", {"message": f"Carian gagal / Search failed: {type(exc).__name__}: {exc}"})
         return
     sources = source_payload(r)
     sources_ms = int((time.perf_counter() - t0) * 1000)

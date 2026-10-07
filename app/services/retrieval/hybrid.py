@@ -49,10 +49,15 @@ def vector_list(h: PackHandle, qvec: list[float] | None, statuses, clearance, k:
         return []
     from app.db import vec_available
 
+    hits = None
     if vec_available():
-        hits = h.conn.execute("SELECT rowid, distance FROM vec_chunks WHERE embedding MATCH ? AND k = ? ORDER BY distance",
-                              (serialize_f32(qvec), k)).fetchall()
-    else:
+        try:
+            # LIMIT form works on every SQLite version ("k = ?" needs SQLite >= 3.41, older on some hosts).
+            hits = h.conn.execute("SELECT rowid, distance FROM vec_chunks WHERE embedding MATCH ? ORDER BY distance LIMIT ?",
+                                  (serialize_f32(qvec), k)).fetchall()
+        except sqlite3.Error:
+            hits = None  # e.g. pack built without vec_chunks: use the plain vectors
+    if hits is None:
         hits = _brute_force(h, qvec, k)
     rows = _filtered_chunks(h, [r[0] for r in hits], statuses, clearance)
     out = []
