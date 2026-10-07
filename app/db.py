@@ -16,7 +16,28 @@ def check_sqlite_version() -> None:
         raise RuntimeError(f"SQLite {sqlite3.sqlite_version} is too old; need >= 3.34 (trigram tokenizer).")
 
 
+_VEC_OK: bool | None = None
+
+
+def vec_available() -> bool:
+    """True when this Python's SQLite can load sqlite-vec. Hosted runtimes (e.g. Vercel) may not allow
+    extensions; packs then fall back to brute-force vector search over the plain chunk_vectors table."""
+    global _VEC_OK
+    if _VEC_OK is None:
+        try:
+            probe = sqlite3.connect(":memory:")
+            probe.enable_load_extension(True)
+            sqlite_vec.load(probe)
+            probe.close()
+            _VEC_OK = True
+        except Exception:  # noqa: BLE001
+            _VEC_OK = False
+    return _VEC_OK
+
+
 def _load_vec(conn: sqlite3.Connection) -> None:
+    if not vec_available():
+        return
     conn.enable_load_extension(True)
     sqlite_vec.load(conn)
     conn.enable_load_extension(False)
@@ -153,6 +174,7 @@ CREATE VIRTUAL TABLE IF NOT EXISTS chunks_fts USING fts5(
     text, content='chunks', content_rowid='id', tokenize='unicode61 remove_diacritics 2'
 );
 CREATE VIRTUAL TABLE IF NOT EXISTS docs_trgm USING fts5(circular_no, title, tokenize='trigram');
+CREATE TABLE IF NOT EXISTS chunk_vectors (chunk_id INTEGER PRIMARY KEY, embedding BLOB NOT NULL);
 """
 
 APP_SQL = """

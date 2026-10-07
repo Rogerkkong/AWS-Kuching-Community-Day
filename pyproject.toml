@@ -1,0 +1,22 @@
+# Used by Vercel (hosted public demo) to install runtime dependencies and find the entrypoint.
+# Local development and the desktop build use requirements-dev.txt.
+[project]
+name = "mixup-navigator"
+version = "1.0.0"
+description = "MixUp Navigator: offline, validity-aware policy assistant (hosted demo with synthetic documents)"
+requires-python = ">=3.11"
+dependencies = [
+    "fastapi>=0.110",
+    "uvicorn>=0.29",
+    "python-multipart>=0.0.9",
+    "pydantic>=2.6",
+    "httpx>=0.27",
+    "pymupdf>=1.24",
+    "sqlite-vec>=0.1.6",
+    "cryptography>=42",
+    "platformdirs>=4.2",
+    "python-dotenv>=1.0",
+]
+
+[tool.vercel]
+entrypoint = "app.vercel_entry:app"

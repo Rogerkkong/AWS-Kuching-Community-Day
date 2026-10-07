@@ -128,7 +128,7 @@ def create_app(mode: str = "officer", token: str = "dev-token", settings: Settin
         return JSONResponse({"detail": str(exc) or "Not found"}, status_code=404)
 
     _mount_ui(app, settings.ui_dist)
-    app.add_middleware(SessionTokenMiddleware, token=token)
+    app.add_middleware(SessionTokenMiddleware, token=token, public=settings.public_demo)
     return app
 
 

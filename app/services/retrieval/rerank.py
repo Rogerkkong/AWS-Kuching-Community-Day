@@ -65,7 +65,11 @@ def rerank(query: str, candidates: list[Candidate], client, settings, handles: l
         by_tier = {h.tier: h for h in handles}
         scores = []
         for c in pool:
-            row = by_tier[c.tier].conn.execute("SELECT embedding FROM vec_chunks WHERE rowid = ?", (c.chunk_id,)).fetchone()
+            conn = by_tier[c.tier].conn
+            try:
+                row = conn.execute("SELECT embedding FROM chunk_vectors WHERE chunk_id = ?", (c.chunk_id,)).fetchone()
+            except Exception:  # noqa: BLE001 - packs built before chunk_vectors existed
+                row = conn.execute("SELECT embedding FROM vec_chunks WHERE rowid = ?", (c.chunk_id,)).fetchone()
             vec = deserialize_f32(row[0]) if row else None
             scores.append(sum(a * b for a, b in zip(qvec, vec)) if vec else 0.0)
         kind = "embedding"

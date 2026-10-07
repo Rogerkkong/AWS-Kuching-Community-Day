@@ -144,7 +144,14 @@ export default function App() {
       </div>
     );
   }
-  if (bootError) return <div className="p-10 text-sm text-danger">{bootError}</div>;
+  if (bootError)
+    return (
+      <div className="flex h-full items-center justify-center p-10 text-center text-sm text-muted">
+        {/token/i.test(bootError)
+          ? "Buka aplikasi melalui pelancar (python -m app.web). / Open the app through the launcher (python -m app.web)."
+          : bootError}
+      </div>
+    );
   if (!user || !health) return <div className="flex h-full items-center justify-center"><Spinner label="MixUp Navigator..." /></div>;
 
   const nav = mode === "officer" ? OFFICER_NAV : PUBLISHER_NAV;
