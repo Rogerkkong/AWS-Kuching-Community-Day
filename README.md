@@ -2,6 +2,12 @@
 
 **Group 11 - AWS Kuching Community Day**
 
+| Ask: cited answer, cancelled circular excluded | Lineage: what replaced what |
+| --- | --- |
+| ![Officer asks whether PP 3/2018 still applies; the answer cites PP 2/2024 and shows PP 3/2018 as excluded because it was cancelled](docs/screenshots/01-ask-cited-answer.png) | ![Lineage tab: PP 3/2018 cancelled by PP 2/2024, which was then amended by PP 5/2025](docs/screenshots/02-lineage.png) |
+| **Signed pack update: SHA-256 + Ed25519 checked before install** | **Publisher: verify relations before they go into a pack** |
+| ![Updates page: both knowledge packs copied, checksum and signature verified, installed atomically](docs/screenshots/03-signed-pack-update.png) | ![Publisher verification queue: approve or reject extracted cancels/amends relations](docs/screenshots/04-publisher-verification.png) |
+
 Offline, bilingual (Bahasa Melayu / English), validity-aware policy assistant for Malaysian civil servants,
 delivered as a desktop app. It answers only from rules that are **currently in force** (plus dated meeting
 records), cites the exact document, clause and page, explains which circulars were cancelled and by what,
