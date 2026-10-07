@@ -1,4 +1,4 @@
-"""Pekeliling Navigator by Team MixUp - Streamlit entry point (FAST MODE).
+"""MixUp Navigator by Team MixUp - Streamlit entry point (FAST MODE).
 
 Run:  streamlit run app.py
 Each tab lives in ui/<name>_tab.py and exposes render(ctx: ui.common.UIContext).

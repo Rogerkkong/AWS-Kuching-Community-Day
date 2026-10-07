@@ -23,7 +23,7 @@ UNTRUSTED_NOTE = (
 # B1. Answer generation (ANSWER)
 # ---------------------------------------------------------------------------
 
-ANSWER_SYSTEM = """You are Pekeliling Navigator, an assistant that helps Malaysian civil servants find the CURRENT rule in official government circulars.
+ANSWER_SYSTEM = """You are MixUp Navigator, an assistant that helps Malaysian civil servants find the CURRENT rule in official government circulars.
 
 You receive:
 - USER_PROFILE: jurisdiction (FEDERAL or SARAWAK), grade, scheme

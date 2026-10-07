@@ -340,7 +340,7 @@ def render(ctx: common.UIContext) -> None:
                               "Same search, no status or jurisdiction filter."))
             _answer_card(ctx, base, "base")
         with right:
-            st.markdown("#### Pekeliling Navigator")
+            st.markdown("#### MixUp Navigator")
             st.caption(ctx.tr("Hanya pekeliling berkuat kuasa, ikut profil anda.", "Only circulars in force, for your profile."))
             _answer_card(ctx, nav, "nav")
     else:

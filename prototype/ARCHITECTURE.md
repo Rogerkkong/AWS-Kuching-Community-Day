@@ -1,4 +1,4 @@
-# Pekeliling Navigator: architecture (FAST MODE)
+# MixUp Navigator: architecture (FAST MODE)
 
 Streamlit and plain Python modules. Everything runs in memory from CSV, JSON and Markdown files, so there is no
 database, Docker or model download. Offline mode works with no LLM at all. The validity filter, citations, excluded

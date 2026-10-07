@@ -1,4 +1,4 @@
-"""Settings for Pekeliling Navigator, read from environment variables (and .env).
+"""Settings for MixUp Navigator, read from environment variables (and .env).
 
 LLM_PROVIDER picks the model behind the answers:
   offline  (default) no model at all; deterministic extractive answers

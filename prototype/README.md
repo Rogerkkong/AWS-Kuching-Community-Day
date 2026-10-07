@@ -1,6 +1,6 @@
-# Pekeliling Navigator, by Team MixUp
+# MixUp Navigator, by Team MixUp
 
-*Never cite a cancelled circular again.* / *Jangan rujuk pekeliling yang telah dibatalkan lagi.*
+*Never cite a cancelled circular again - even offline.* / *Jangan rujuk pekeliling yang telah dibatalkan lagi - walaupun luar talian.*
 
 A bilingual (BM/EN) policy assistant for Malaysian civil servants that knows which circulars are still valid. It
 answers only from circulars currently in force and cites the circular, clause and page. Each answer shows a status
@@ -10,16 +10,38 @@ to suit the user's profile, explains what changed between versions, and enforces
 
 All documents are **SYNTHETIC - SAMPLE ONLY** and come from fictional issuers.
 
-## Run (offline, no setup beyond pip)
+## Quick start on a Mac (offline, about 3 minutes)
+
+1. **Check Python.** Open Terminal and run `python3 --version`. You need **3.10 or newer**.
+   If it says 3.9 (the Mac default), install Python 3.12 from https://www.python.org/downloads/ and open a new Terminal.
+2. **Get the code** (GitHub Desktop: Fetch origin, then Pull origin), then in Terminal:
 
 ```bash
-cd prototype
-python3 -m venv .venv && source .venv/bin/activate      # Windows: .venv\Scripts\activate
+cd ~/Documents/GitHub/AWS-Kuching-Community-Day/prototype
+python3 -m venv .venv
+source .venv/bin/activate
 pip install -r requirements.txt
-streamlit run app.py                                     # http://localhost:8501
-pytest -q                                                # tests
-python scripts/reset_demo.py                             # clear data/runtime (same as the Reset demo button)
+streamlit run app.py
 ```
+
+3. Your browser opens **http://localhost:8501**. No AWS, no API key, no model download: it runs fully offline.
+4. Next time, you only need: `cd .../prototype`, `source .venv/bin/activate`, `streamlit run app.py`.
+
+Windows: use `py -3.12 -m venv .venv` and `.venv\Scripts\activate` instead.
+Tests: `pytest -q`. Reset the demo data: the **Set semula demo** button in the sidebar (or `python scripts/reset_demo.py`).
+
+## 5-minute demo script
+
+1. **Ask tab** (user *Pegawai Persekutuan (Terbuka)*): click **Perangkap: kadar perbatuan**.
+   MixUp answers **RM0.80/km** citing **SPP 2/2025 [S1]**, and shows **"Dikecualikan: SPP 3/2019, dibatalkan oleh SPP 1/2023"**.
+2. Turn on **Bandingkan dengan chatbot biasa (baseline)**: the typical chatbot cites the cancelled circular. That is the problem we solve.
+3. Open **Salasilah & Perubahan**: show the lineage of the travel-claim rule and **Apa yang berubah?** (30 to 60 days, RM0.55 to RM0.70).
+4. Switch the sidebar user to **Pegawai Sarawak (Terbuka)** and click **Persekutuan vs Sarawak**: the Sarawak rule (10 days) comes first, the federal rule (7 days) beside it.
+5. Switch to **Admin**, open **Pentadbir / Admin**, click the demo circular **SPP 1/2026**, approve the detected relations.
+   Switch back to an officer: the bell shows the update, and asking the travel-claim question again now cites **SPP 1/2026**.
+6. Switch between a **Terbuka** and a **Terhad** user to show restricted documents appearing only for cleared users.
+7. **Penilaian / Evaluation**: show the baseline vs MixUp Navigator numbers for the metrics slide.
+8. Press **Set semula demo** before you go on stage.
 
 ## Model modes (`LLM_PROVIDER` in `.env`, also switchable in the sidebar)
 
@@ -27,7 +49,7 @@ python scripts/reset_demo.py                             # clear data/runtime (s
 |---|---|
 | `offline` (default) | No model. Deterministic extractive answers with `[S#]` citations, regex metadata and relations, and template change summaries. The whole demo works this way. |
 | `ollama` | Local sovereign model (`LLM_MODEL`, default `qwen3:8b`) at `OLLAMA_BASE_URL`. Falls back to offline with a warning on any error. |
-| `bedrock` | Claude on Amazon Bedrock (optional, public documents only). Needs `anthropic[bedrock]` and AWS credentials. Falls back to offline. |
+| `bedrock` | Claude on Amazon Bedrock (optional, public documents only). Needs `pip install -r requirements-optional.txt` and AWS credentials. Falls back to offline. |
 
 ## Demo data (synthetic)
 
