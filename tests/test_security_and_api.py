@@ -126,3 +126,17 @@ def test_amended_clause_brings_its_amendment_into_context(officer):
 def test_amendment_not_injected_for_untouched_clauses(officer):
     src = ask(officer, "Berapa hari cuti rehat yang boleh dibawa ke hadapan?")[0][1]["sources"]
     assert ("PP 5/2025", "2.1-2.2") not in [(s["circular_no"], s["clause_ref"]) for s in src]
+
+
+def test_web_mode_view_follows_account_role(env, tmp_path):
+    from conftest import make_officer
+
+    site = make_officer(env.settings, tmp_path / "web", mode="web")
+    switch(site, 1)  # officer account
+    assert site.get("/api/config", headers=H).json()["mode"] == "officer"
+    assert site.get("/api/publisher/documents", headers=H).status_code == 403
+    assert {u["role"] for u in site.get("/api/users", headers=H).json()["users"]} == {"OFFICER", "PUBLISHER"}
+    switch(site, 4)  # Faizal, publisher
+    cfg = site.get("/api/config", headers=H).json()
+    assert cfg["mode"] == "publisher" and cfg["server_mode"] == "web"
+    assert site.get("/api/publisher/documents", headers=H).status_code == 200

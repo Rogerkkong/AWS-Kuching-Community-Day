@@ -63,7 +63,7 @@ def create_app(mode: str = "officer", token: str = "dev-token", settings: Settin
     from app.routers import alerts, analytics, ask, documents, packs, publisher, users
     for module in (users, packs, documents, ask, alerts, analytics):
         app.include_router(module.router)
-    if mode == "publisher":
+    if mode in ("publisher", "web"):
         app.include_router(publisher.router)
 
     @app.get("/health")
@@ -74,7 +74,7 @@ def create_app(mode: str = "officer", token: str = "dev-token", settings: Settin
         except Exception as exc:  # noqa: BLE001
             inference = {"backend": st.settings.inference_backend, "reachable": False, "detail": str(exc)}
         from app.services.packs.install import installed_packs
-        packs_info = installed_packs(st) if mode == "officer" else []
+        packs_info = installed_packs(st) if mode != "publisher" else []
         return {
             "status": "ok",
             "mode": st.mode,
@@ -92,7 +92,11 @@ def create_app(mode: str = "officer", token: str = "dev-token", settings: Settin
         with st.app_db() as conn:
             lang = db.get_setting(conn, "ui_language", "ms")
             source = db.get_setting(conn, "update_source", str(st.settings.dist_packs_dir))
-        return {"mode": st.mode, "ui_language": lang, "update_source": source,
+        # "web" mode serves both views on one site; the current account's role picks the view.
+        view = st.mode
+        if st.mode == "web":
+            view = "publisher" if st.current_user()["role"] == "PUBLISHER" else "officer"
+        return {"mode": view, "server_mode": st.mode, "ui_language": lang, "update_source": source,
                 "backend": st.settings.inference_backend, "llm_model": st.settings.llm_model,
                 "embedding_model": st.settings.embedding_model_id}
 

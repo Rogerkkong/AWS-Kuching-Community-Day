@@ -1,6 +1,7 @@
-"""Website mode for live demos: Officer site + Publisher site in the browser (no desktop window).
+"""Website mode for live demos: one site in the browser; switching account switches the view
+(officer accounts -> Officer screens, Faizal -> Publisher screens).
 
-    python -m app.web                 # Officer on :8765, Publisher on :8766, opens both in the browser
+    python -m app.web                 # http://127.0.0.1:8765, opens it in the browser
     python -m app.web --no-open       # just print the URLs
 
 Falls back to the deterministic fake backend when Ollama is not reachable (and INFERENCE_BACKEND
@@ -17,8 +18,7 @@ import webbrowser
 
 def main(argv: list[str] | None = None) -> int:
     ap = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
-    ap.add_argument("--officer-port", type=int, default=8765)
-    ap.add_argument("--publisher-port", type=int, default=8766)
+    ap.add_argument("--port", type=int, default=8765)
     ap.add_argument("--no-open", action="store_true")
     args = ap.parse_args(argv)
 
@@ -33,27 +33,23 @@ def main(argv: list[str] | None = None) -> int:
 
     from app.desktop import ApiServer
 
-    officer = ApiServer("officer", args.officer_port)
-    officer.start()
-    publisher = ApiServer("publisher", args.publisher_port)
-    publisher.start()
+    site = ApiServer("web", args.port)
+    site.start()
     if get_client().health().get("reachable"):
         warm_up_async()
 
     print("\nMixUp Navigator - website mode")
-    print(f"  Officer   : {officer.window_url}")
-    print(f"  Publisher : {publisher.window_url}")
+    print(f"  Open      : {site.window_url}")
+    print("  Switch account (bottom left) to change view: officers <-> Faizal (Publisher)")
     print("Keep this window open. Press Ctrl+C to stop.\n", flush=True)
     if not args.no_open:
-        webbrowser.open(publisher.window_url)
-        webbrowser.open(officer.window_url)
+        webbrowser.open(site.window_url)
     try:
         while True:
             time.sleep(1)
     except KeyboardInterrupt:
         pass
-    officer.stop()
-    publisher.stop()
+    site.stop()
     return 0
 
 

@@ -28,6 +28,7 @@ function initials(name: string) {
 export default function App() {
   const [lang, setLangState] = useState<Lang>("ms");
   const [mode, setMode] = useState<"officer" | "publisher">("officer");
+  const [serverMode, setServerMode] = useState<"officer" | "publisher" | "web">("officer");
   const [page, setPage] = useState<Page>("ask");
   const [health, setHealth] = useState<Health | null>(null);
   const [users, setUsers] = useState<User[]>([]);
@@ -70,22 +71,30 @@ export default function App() {
     }
   }, []);
 
+  const applyView = useCallback(
+    async (view: "officer" | "publisher") => {
+      setMode(view);
+      setPage(view === "publisher" ? "pub-docs" : "ask");
+      if (view === "officer") {
+        await Promise.all([refreshPacks(), refreshAlerts()]);
+        checkUpdates();
+      }
+    },
+    [refreshPacks, refreshAlerts, checkUpdates],
+  );
+
   useEffect(() => {
     if (!hasToken()) return;
     (async () => {
       try {
-        const cfg = await api.get<{ mode: "officer" | "publisher"; ui_language: Lang }>("/api/config");
-        setMode(cfg.mode);
+        const cfg = await api.get<{ mode: "officer" | "publisher"; server_mode: "officer" | "publisher" | "web"; ui_language: Lang }>("/api/config");
+        setServerMode(cfg.server_mode ?? cfg.mode);
         setLangState(cfg.ui_language === "en" ? "en" : "ms");
-        setPage(cfg.mode === "publisher" ? "pub-docs" : "ask");
         const u = await api.get<{ users: User[]; current: User }>("/api/users");
         setUsers(u.users);
         setUser(u.current);
         await refreshHealth();
-        if (cfg.mode === "officer") {
-          await Promise.all([refreshPacks(), refreshAlerts()]);
-          checkUpdates();
-        }
+        await applyView(cfg.mode);
       } catch (e: any) {
         setBootError(String(e.message ?? e));
       }
@@ -98,7 +107,7 @@ export default function App() {
       window.removeEventListener("online", on);
       window.removeEventListener("offline", off);
     };
-  }, [refreshAlerts, refreshHealth, refreshPacks, checkUpdates]);
+  }, [refreshHealth, applyView]);
 
   useEffect(() => {
     const id = window.setInterval(refreshHealth, health?.model.state === "ready" ? 15000 : 3000);
@@ -117,9 +126,10 @@ export default function App() {
       setInspect(null);
       setUserVersion((v) => v + 1);
       setProfileOpen(false);
-      await refreshAlerts();
+      const cfg = await api.get<{ mode: "officer" | "publisher" }>("/api/config");
+      await applyView(cfg.mode);
     },
-    [refreshAlerts],
+    [applyView],
   );
 
   const ctx: AppCtx = useMemo(
@@ -189,12 +199,14 @@ export default function App() {
               <div className="flex items-center gap-2 text-[13px] font-semibold"><span className="h-2 w-2 rounded-full bg-[#7CC59A]" />{t(lang, "offlineTitle")}</div>
               <div className="text-xs leading-snug text-[#A9B7BD]">{t(lang, "offlineBody")}</div>
             </div>
-            {mode === "officer" ? (
+            {serverMode !== "publisher" ? (
               <button onClick={() => setProfileOpen(!profileOpen)} className="flex items-center gap-2.5 border-0 border-t border-[#253740] bg-transparent px-4 py-3.5 text-left text-inherit hover:bg-[#1C2B32]">
                 <div className="flex h-[34px] w-[34px] flex-none items-center justify-center rounded-full bg-[#E6D3A8] text-xs font-semibold text-navy">{initials(user.name)}</div>
                 <div className="min-w-0 flex-1">
                   <div className="truncate text-[13px] font-semibold">{user.name}</div>
-                  <div className="text-[11px] text-[#9AACB3]">{t(lang, user.jurisdiction)} · {user.clearance_label} · {user.grade}</div>
+                  <div className="text-[11px] text-[#9AACB3]">
+                    {user.role === "PUBLISHER" ? t(lang, "modePublisher") : t(lang, user.jurisdiction)} · {user.clearance_label} · {user.grade}
+                  </div>
                 </div>
                 <span className="text-[11px] text-[#6F858E]">▲</span>
               </button>
@@ -203,13 +215,15 @@ export default function App() {
             )}
             {profileOpen && (
               <div className="absolute bottom-[70px] left-3 z-20 w-[310px] rounded-[10px] bg-white p-2 text-ink shadow-[0_18px_40px_rgba(0,0,0,.28)]">
-                <div className="eyebrow px-2.5 pb-1.5 pt-2">{t(lang, "switchOfficer")}</div>
+                <div className="eyebrow px-2.5 pb-1.5 pt-2">{serverMode === "web" ? t(lang, "switchAccount") : t(lang, "switchOfficer")}</div>
                 {users.map((u) => (
                   <button key={u.id} onClick={() => switchUser(u.id)} className={`flex w-full items-center gap-2.5 rounded-lg border-0 px-2.5 py-2 text-left ${u.id === user.id ? "bg-accent-soft" : "bg-white hover:bg-[#FAF8F4]"}`}>
                     <div className="flex h-8 w-8 items-center justify-center rounded-full bg-[#E6D3A8] text-[11px] font-semibold">{initials(u.name)}</div>
                     <div className="flex-1">
                       <div className="text-[13px] font-semibold">{u.name}</div>
-                      <div className="text-[11px] text-muted">{t(lang, u.jurisdiction)} · {u.clearance_label} · {u.grade} · {u.scheme}</div>
+                      <div className="text-[11px] text-muted">
+                        {u.role === "PUBLISHER" ? `${t(lang, "modePublisher")} · ` : ""}{t(lang, u.jurisdiction)} · {u.clearance_label} · {u.grade} · {u.scheme}
+                      </div>
                     </div>
                   </button>
                 ))}

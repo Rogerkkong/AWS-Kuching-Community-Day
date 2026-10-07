@@ -27,6 +27,7 @@ const S = {
   noNotifications: ["Tiada pemberitahuan.", "No notifications."],
   markAllRead: ["Tanda semua dibaca", "Mark all read"],
   switchOfficer: ["Tukar pegawai (demo)", "Switch officer (demo)"],
+  switchAccount: ["Tukar akaun (demo) · paparan ikut peranan", "Switch account (demo) · view follows the role"],
   clearance: ["Klasifikasi", "Clearance"],
   updateAvailable: ["Kemas kini tersedia", "Update available"],
   viewUpdate: ["Lihat kemas kini", "View update"],

@@ -1,3 +1,4 @@
+<<<<<<< HEAD
 # MixUp Navigator
 
 Offline, bilingual (Bahasa Melayu / English), validity-aware policy assistant for Malaysian civil servants,
@@ -21,9 +22,11 @@ One codebase, two modes:
 .venv/Scripts/python -m app.web
 ```
 
-Or double-click `start_web.cmd`. This starts the **Officer** site (port 8765) and the **Publisher** site
-(port 8766) on 127.0.0.1 and opens both in the browser. If Ollama is not running, it uses the fake backend
-automatically. Keep the console window open during the demo.
+Or double-click `start_web.cmd`. This starts **one website** on http://127.0.0.1:8765 and opens it in the
+browser. The account switcher (bottom left) decides the view: officer accounts (Aina, Jason, Aminah) see
+the Officer screens, Faizal (Publisher) sees the Publisher screens; Publisher actions are refused for
+officer accounts. If Ollama is not running, the fake backend is used automatically. Keep the console
+window open during the demo.
 
 ## Requirements
 
@@ -116,3 +119,8 @@ See `SPEC.md` (specification), `TASKS.md` (milestones), `DECISIONS.md` (design c
 ## Demo script
 
 See the "Demo script" section at the end of `PROGRESS.md` once M9 is complete.
+=======
+# AWS-Kuching-Community-Day
+Group 11 - MixUp Navigator
+
+>>>>>>> aa46ae37cff0913f2d4ce96e57f7f91066893f48

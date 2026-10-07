@@ -8,7 +8,7 @@ from contextlib import contextmanager
 from datetime import datetime
 from typing import Iterator, Literal
 
-from fastapi import APIRouter, File, Request, UploadFile
+from fastapi import APIRouter, Depends, File, Request, UploadFile
 from pydantic import BaseModel
 
 from app import db
@@ -18,7 +18,14 @@ from app.services.inference.client import get_client
 from app.services.ingest import pipeline
 from app.services.packs.build import build_packs, latest_versions, read_manifest
 
-router = APIRouter(prefix="/api/publisher", tags=["publisher"])
+def require_publisher(request: Request) -> None:
+    """On the combined website, only a PUBLISHER account may use these endpoints."""
+    st = request.app.state.pn
+    if st.mode == "web" and st.current_user()["role"] != "PUBLISHER":
+        raise PermissionError("Publisher account required / Akaun penerbit diperlukan")
+
+
+router = APIRouter(prefix="/api/publisher", tags=["publisher"], dependencies=[Depends(require_publisher)])
 
 EDITABLE = {"circular_no", "series", "title", "issuer", "doc_type", "jurisdiction", "cluster", "issue_date",
             "effective_date", "expiry_date", "one_off", "classification_level", "language", "applicability",
