@@ -123,7 +123,7 @@ var APP = (function () {
     metric: ['Metrik', 'Metric'], baseline: ['Garis asas (RAG biasa)', 'Baseline (plain RAG)'], target: ['Sasaran', 'Target'], by_type: ['Mengikut jenis soalan (betul dan terkini)', 'By question type (correct and current)'],
     type: ['Jenis', 'Type'],
     m_correct: ['Jawapan betul & terkini', 'Correct & current answers'], m_cancelled: ['Kadar petikan dibatalkan', 'Cancelled-citation rate'], m_recall: ['Recall@5', 'Recall@5'], m_mrr: ['MRR', 'MRR'],
-    m_cite: ['Ketepatan petikan', 'Citation accuracy'], m_jur: ['Ketepatan bidang kuasa', 'Jurisdiction accuracy'], m_refusal: ['Ketepatan penolakan', 'Refusal accuracy'],
+    m_cite: ['Ketepatan petikan', 'Citation accuracy'], m_jur_acc: ['Ketepatan bidang kuasa', 'Jurisdiction accuracy'], m_refusal: ['Ketepatan penolakan', 'Refusal accuracy'],
     m_false_refusal: ['Kadar penolakan palsu', 'False-refusal rate'], m_leaks: ['Kebocoran akses', 'Access leaks'], m_p50: ['Latensi p50', 'Latency p50'], m_p95: ['Latensi p95', 'Latency p95'],
     a_total: ['Soalan ditanya', 'Questions asked'], a_unanswered: ['Kadar tidak terjawab', 'Unanswered rate'], a_excluded: ['Pengecualian pekeliling dibatalkan', 'Cancelled-circular exclusions'], a_users: ['Pegawai aktif', 'Active officers'],
     a_top_q: ['Soalan paling kerap', 'Top questions'], a_top_ex: ['Pekeliling dibatalkan paling kerap dikecualikan', 'Cancelled circulars most often excluded'],
@@ -137,7 +137,7 @@ var APP = (function () {
     role_OFFICER: ['Pegawai', 'Officer'], role_POLICY_OWNER: ['Pemilik dasar', 'Policy owner'], role_ADMIN: ['Pentadbir', 'Admin'],
     circular: ['pekeliling', 'circular'], guideline: ['garis panduan', 'guideline'], sop: ['SOP', 'SOP'], minutes: ['minit mesyuarat', 'minutes'], report: ['laporan', 'report'],
     in_force_from: ['berkuat kuasa {d}', 'in force from {d}'], status_arrow: ['{a} → {b}', '{a} → {b}'],
-    loading: ['Memuatkan…', 'Loading…'], stub_warn: ['engine.js tidak dimuatkan – data pemegang tempat', 'engine.js not loaded – placeholder data']
+    loading: ['Memuatkan…', 'Loading…'], stub_warn: ['', '']
   };
 
   var SUGGESTIONS = [
@@ -321,7 +321,7 @@ var APP = (function () {
     var u = user();
     var line = packs.filter(function (p) { return (p.tier | 0) <= (u.clearance_level | 0); }).map(function (p, i) { return (i ? '' : tierLabel(p.tier) + ' ') + (i ? tierLabel(p.tier) + ' ' : (lang() === 'en' ? 'pack ' : 'pek ')) + 'v' + p.version; }).join(' · ');
     if (lang() === 'ms' && packs.length) line = 'Pek ' + packs.filter(function (p) { return (p.tier | 0) <= (u.clearance_level | 0); }).map(function (p) { return tierLabel(p.tier) + ' v' + p.version; }).join(' · ');
-    var stub = MX.__stub ? ' · ' + t('stub_warn') : '';
+    var stub = '';
     return '<div class="sbar"><span class="net"><span class="dot"></span>' + t('net_offline') + '</span><span>' + t('engine_ready') + '</span><span>' + esc(line) + '</span>' +
       '<span class="spacer"></span><span>' + t('local_note') + esc(stub) + '</span></div>';
   }
@@ -406,7 +406,7 @@ var APP = (function () {
     var body;
     if (!ready) body = '<div class="empty">' + t(a.phase === 'retrieving' ? 'empty_retrieving' : 'empty_idle') + '</div>';
     else if (S.tab === 'viewer') body = S.viewer ? viewerHtml(S.viewer, 'viewer') : '<div class="empty">' + t('empty_page') + '</div>';
-    else if (S.tab === 'lineage') body = S.lineageDoc ? lineageHtml(S.lineageDoc, 'lineage') : '<div class="empty">' + t('empty_lineage') + '</div>';
+    else if (S.tab === 'lineage') body = S.lineageDoc ? lineageHtml(S.lineageDoc, 'lineage', r.citations && r.citations[0] && r.citations[0].doc_id) : '<div class="empty">' + t('empty_lineage') + '</div>';
     else body = n ? sourcesHtml(r.citations) : '<div class="empty">' + t(r.answerable ? 'empty_idle' : 'empty_refused') + '</div>';
     return panelHtml(tabs, S.tab, 'tab', body, 'askpanel');
   }
@@ -443,8 +443,9 @@ var APP = (function () {
       '<div class="paper-doc"><div class="paper-issuer">' + esc(doc.issuer || '') + '</div><div class="paper-title">' + esc(doc.circular_no || '') + ' · ' + esc(doc.title || '') + '</div><div class="paper-rule"></div>' +
       (pg.heading ? '<div class="paper-heading">' + esc(pg.heading) + '</div>' : '') + rows + '<div class="paper-spacer"></div><div class="paper-wm">' + t('synthetic') + '</div><div class="paper-foot">' + (idx + 1) + '</div></div></div>';
   }
-  function lineageHtml(docId, act) {
+  function lineageHtml(docId, act, curId) {
     var lg; try { lg = MX.lineage(docId); } catch (e) { lg = null; }
+    curId = curId || docId;
     if (!lg || !lg.nodes || !lg.nodes.length) return '<div class="empty">' + t('empty_lineage') + '</div>';
     var nodes = lg.nodes, edges = lg.edges || [];
     var html = '<div class="lineage"><div class="lineage-intro">' + t('lineage_intro') + '</div>';
@@ -483,12 +484,12 @@ var APP = (function () {
     function chip(group, key, label) { var on = f[group] === key; return '<button class="chipbtn ' + (on ? 'on' : '') + '" data-act="libf" data-arg="' + group + ':' + key + '" aria-pressed="' + on + '">' + esc(label) + '</button>'; }
     var chips = '<div class="chiprow">' + chip('status', 'all', t('f_all')) + chip('status', 'valid', t('f_valid')) + chip('status', 'cancelled', t('f_cancelled')) + '<span class="chipsep"></span>' +
       chip('jur', 'all', t('f_all')) + chip('jur', 'FEDERAL', t('FEDERAL')) + chip('jur', 'SARAWAK', t('SARAWAK')) + '</div>';
-    var table = '<div class="table"><div class="lib-head"><span>' + t('col_no') + '</span><span>' + t('col_title') + '</span><span>' + t('col_jur') + '</span><span>' + t('col_status') + '</span><span>' + t('col_date') + '</span><span>' + t('col_tier') + '</span></div>' +
+    var table = '<div class="table"><div class="lib-head"><span>' + t('col_no') + '</span><span>' + t('col_title') + '</span><span class="col-jur">' + t('col_jur') + '</span><span>' + t('col_status') + '</span><span>' + t('col_date') + '</span><span class="col-tier">' + t('col_tier') + '</span></div>' +
       (rows.length ? rows.map(function (r) {
         var tier = r.tier | 0;
         return '<button class="lib-row ' + (tier ? 'restricted' : '') + (f.doc === r.doc_id ? ' sel' : '') + '" data-act="librow" data-arg="' + esc(r.doc_id) + '"><span class="no">' + esc(r.no || r.circular_no) + '</span>' +
-          '<div class="tt"><span class="t">' + esc(r.title) + '</span>' + (r.status_reason ? '<span class="r">' + esc(r.status_reason) + '</span>' : '') + '</div><span class="jur">' + esc(jurLabel(r.jurisdiction)) + '</span>' +
-          '<span>' + statusChip(r.status) + '</span><span class="date">' + esc(fmtDate(r.date)) + '</span><span class="tier ' + (tier ? 'restricted' : '') + '">' + tierLabel(tier) + '</span></button>';
+          '<div class="tt"><span class="t">' + esc(r.title) + '</span>' + (r.status_reason ? '<span class="r">' + esc(r.status_reason) + '</span>' : '') + '<span class="sub">' + esc(jurLabel(r.jurisdiction)) + ' \u00b7 ' + tierLabel(tier) + '</span></div><span class="jur col-jur">' + esc(jurLabel(r.jurisdiction)) + '</span>' +
+          '<span>' + statusChip(r.status) + '</span><span class="date">' + esc(fmtDate(r.date)) + '</span><span class="tier col-tier ' + (tier ? 'restricted' : '') + '">' + tierLabel(tier) + '</span></button>';
       }).join('') : '<div class="lib-empty">' + t('lib_empty') + '</div>') + '</div>';
     var foot = '<div class="lib-foot">' + t('lib_count', { n: rows.length }) + ' · ' + t((u.clearance_level | 0) >= 1 ? 'lib_foot_t1' : 'lib_foot_t0') + '</div>';
     var panel = '';
@@ -624,11 +625,11 @@ var APP = (function () {
     var tiers = (list.length ? list : [{ tier: 0, version: cur }, { tier: 1, version: cur }]).map(function (p) {
       var docs = Array.isArray(p.documents) ? p.documents.length : pick(p, ['documents', 'doc_count'], (MX.data.documents || []).filter(function (d) { return (d.classification_level | 0) <= (p.tier | 0); }).length);
       var inst = installedVersion(p.tier);
-      return '<div class="tier"><div class="l"><div class="nm"><span class="n">' + esc(tierLabel(p.tier)) + (lang() === 'en' ? ' pack' : '') + '</span><span class="tier-chip tier-' + (p.tier | 0) + '">' + esc(tierLabel(p.tier)) + '</span></div>' +
+      return '<div class="tiercard"><div class="l"><div class="nm"><span class="n">' + esc(tierLabel(p.tier)) + (lang() === 'en' ? ' pack' : '') + '</span><span class="tier-chip tier-' + (p.tier | 0) + '">' + esc(tierLabel(p.tier)) + '</span></div>' +
         '<div class="meta">' + esc(t('documents_n', { n: docs })) + ' · ' + esc(t('verified_rel', { n: verified })) + '</div><div class="deliv">' + t('deliver_' + Math.min(2, p.tier | 0)) + '</div></div>' +
         '<div class="ver">' + (inst && inst !== p.version ? 'v' + inst + ' → ' : '') + 'v' + esc(p.version) + '</div></div>';
     }).join('');
-    var incl = '<div class="incl"><span class="eyebrow">' + t('included', { v: cur }) + '</span><span class="s">' + esc(t('documents_n', { n: (MX.data.documents || []).length })) + ' · ' + esc(t('verified_rel', { n: verified })) + ' · ' + esc(t('pending_rel', { n: pendingN })) + ' · ' + t('in_browser_index') + '</span></div>';
+    var incl = '<div class="incl"><span class="eyebrow">' + t('included', { v: installedVersion(0) || cur }) + '</span><span class="s">' + esc(t('documents_n', { n: (MX.data.documents || []).length })) + ' · ' + esc(t('verified_rel', { n: verified })) + ' · ' + esc(t('pending_rel', { n: pendingN })) + ' · ' + t('in_browser_index') + '</span></div>';
     var mtable = '';
     if (B.done && list.length) {
       mtable = '<div class="mtable"><div class="mrow head"><span>' + t('c_tier') + '</span><span>' + t('c_ver') + '</span><span>' + t('c_file') + '</span><span>' + t('c_sha') + '</span><span>' + t('c_sig') + '</span><span>' + t('c_docs') + '</span></div>' +
@@ -664,7 +665,7 @@ var APP = (function () {
     ['recall_at_5', ['recall_at_5', 'recall5', 'recall@5', 'recall'], 'm_recall', '≥ 0.80', 'pct', true],
     ['mrr', ['mrr'], 'm_mrr', '≥ 0.60', 'num', true],
     ['citation_accuracy', ['citation_accuracy'], 'm_cite', '≥ 0.85', 'pct', true],
-    ['jurisdiction_accuracy', ['jurisdiction_accuracy'], 'm_jur', '-', 'pct', true],
+    ['jurisdiction_accuracy', ['jurisdiction_accuracy'], 'm_jur_acc', '-', 'pct', true],
     ['refusal_accuracy', ['refusal_accuracy'], 'm_refusal', '≥ 0.80', 'pct', true],
     ['false_refusal_rate', ['false_refusal_rate'], 'm_false_refusal', '-', 'pct', false],
     ['access_leaks', ['access_leaks', 'leaks'], 'm_leaks', '0', 'int', false],
@@ -701,7 +702,8 @@ var APP = (function () {
     if (S.evalRunning) return;
     S.evalRunning = true; render();
     later(function () {
-      Promise.resolve(MX.evaluation({ run: true })).then(function (res) { S.evalRes = res || S.evalRes; S.evalSource = 'browser'; })
+      var run = typeof MX.runEvaluation === 'function' ? MX.runEvaluation() : MX.evaluation({ run: true });
+      Promise.resolve(run).then(function (res) { S.evalRes = res || S.evalRes; S.evalSource = 'browser'; })
         .catch(function (e) { console.error(e); }).then(function () { S.evalRunning = false; render(); });
     }, 30);
   }
@@ -848,7 +850,7 @@ var APP = (function () {
     var docs = [
       D('SPP-3-2019', 'SPP 3/2019', 'Tuntutan Elaun Perjalanan Dalam Negeri', 'FEDERAL', 'travel-claims', '2019-05-15', '2019-06-01', 0, [['TUJUAN', '1 Surat Pekeliling ini menetapkan peraturan tuntutan elaun perjalanan dalam negeri.'], ['PERATURAN TUNTUTAN', '4.1 Tuntutan elaun perjalanan hendaklah dikemukakan dalam tempoh 30 hari dari tarikh perjalanan selesai.', '4.2 Kadar elaun perbatuan bagi pegawai yang menggunakan kenderaan sendiri ialah RM0.55 sekilometer.', '4.3 Tuntutan dikemukakan menggunakan borang kertas JPC-TP1.']]),
       D('SPP-1-2023', 'SPP 1/2023', 'Tuntutan Elaun Perjalanan Dalam Negeri dan Pelaksanaan Sistem e-Tuntutan', 'FEDERAL', 'travel-claims', '2023-02-15', '2023-03-01', 0, [['TUJUAN', '1 Surat Pekeliling ini menetapkan peraturan baharu tuntutan elaun perjalanan dan mewajibkan sistem e-Tuntutan.'], ['PERATURAN TUNTUTAN', '4.1 Tuntutan elaun perjalanan hendaklah dikemukakan dalam tempoh 60 hari dari tarikh perjalanan selesai.', '4.2 Kadar elaun perbatuan bagi pegawai yang menggunakan kenderaan sendiri untuk tugas rasmi ialah RM0.70 sekilometer.', '4.3 Semua tuntutan hendaklah dikemukakan melalui sistem e-Tuntutan. Borang kertas tidak lagi diterima.'], ['PEMBATALAN', '6 Dengan berkuat kuasanya Surat Pekeliling Perkhidmatan ini, Surat Pekeliling Perkhidmatan Bilangan 3 Tahun 2019 adalah dibatalkan.']]),
-      D('SPP-2-2025', 'SPP 2/2025', 'Pindaan Kadar Elaun Perbatuan bagi Tuntutan Perjalanan Dalam Negeri', 'FEDERAL', 'travel-claims', '2025-06-10', '2025-07-01', 0, [['PINDAAN', '4 Perenggan 4.2 Surat Pekeliling Perkhidmatan Bilangan 1 Tahun 2023 dipinda seperti berikut:', '4.1 Kadar elaun perbatuan bagi pegawai yang menggunakan kenderaan sendiri untuk tugas rasmi ialah RM0.80 sekilometer.', '4.2 Peruntukan lain dalam Surat Pekeliling Perkhidmatan Bilangan 1 Tahun 2023, termasuk tempoh tuntutan 60 hari, kekal berkuat kuasa.']]),
+      D('SPP-2-2025', 'SPP 2/2025', 'Pindaan Kadar Elaun Perbatuan bagi Tuntutan Perjalanan Dalam Negeri', 'FEDERAL', 'travel-claims', '2025-06-10', '2025-07-01', 0, [['PINDAAN', '4 Perenggan 4.2 Surat Pekeliling Perkhidmatan Bilangan 1 Tahun 2023 dipinda seperti berikut: kadar elaun perbatuan bagi pegawai yang menggunakan kenderaan sendiri untuk tugas rasmi ialah RM0.80 sekilometer (mileage rate RM0.80 per km).', '4.2 Peruntukan lain dalam Surat Pekeliling Perkhidmatan Bilangan 1 Tahun 2023, termasuk tempoh tuntutan 60 hari, kekal berkuat kuasa.']]),
       D('PP-4-2024', 'PP 4/2024', 'Cuti Penjagaan Anak bagi Pegawai Perkhidmatan Awam Persekutuan', 'FEDERAL', 'leave', '2024-06-03', '2024-07-01', 0, [['KELAYAKAN', '4.1 Pegawai layak mendapat cuti penjagaan anak sebanyak 7 hari setahun bagi anak berumur 12 tahun ke bawah.']]),
       D('PAN-2-2024', 'PAN 2/2024', 'Cuti Penjagaan Anak bagi Perkhidmatan Awam Negeri Sarawak', 'SARAWAK', 'leave', '2024-08-12', '2024-09-01', 0, [['KELAYAKAN', '4.1 Pegawai negeri layak mendapat cuti penjagaan anak sebanyak 10 hari setahun.', '4.2 Had umur 12 tahun tidak terpakai bagi anak OKU.']]),
       D('SOP-AUDIT-2025', 'SOP 1/2025', 'Prosedur Dalaman Audit Tuntutan Perjalanan (TERHAD)', 'FEDERAL', 'travel-claims', '2025-03-05', '2025-04-01', 1, [['AMBANG AUDIT', '3.1 Tuntutan melebihi RM1,500 sebulan diaudit secara automatik.']])

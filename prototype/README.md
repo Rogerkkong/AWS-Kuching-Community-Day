@@ -1,16 +1,17 @@
-# MixUp Navigator, by Team MixUp
+# MixUp Navigator
 
 *Never cite a cancelled circular again - even offline.* / *Jangan rujuk pekeliling yang telah dibatalkan lagi - walaupun luar talian.*
 
-A bilingual (BM/EN) policy assistant for Malaysian civil servants that knows which circulars are still valid. It
-answers only from circulars currently in force and cites the circular, clause and page. Each answer shows a status
-badge and the cancelled circulars that were excluded. The app also shows lineage, chooses the Federal or Sarawak rule
-to suit the user's profile, explains what changed between versions, and enforces classification tiers
-(Terbuka/Terhad/Sulit) in code.
+## Demo: open one file, nothing to install
 
-All documents are **SYNTHETIC - SAMPLE ONLY** and come from fictional issuers.
+1. Open `prototype/web/index.html` in Chrome or Safari (double-click it). No server, no model, no internet.
+2. **Officer mode**: click a suggested question on **Ask**, open **Sources / Page / Lineage** on the right, then **Updates** -> *Install Terbuka pack v4* (watch the 7 verification steps) and *Simulate tampered pack* (rejected, previous version stays).
+3. **Publisher mode** (switch at the top of the sidebar): **Circulars** -> *Use demo circular SPP 1/2026* -> *Add to library* -> approve the detected relations; **Build packs**; **Evaluation**; **Analytics**.
+4. Switch officers from the profile card at the bottom-left (Terbuka vs Terhad clearance) and the BM/EN toggle in the title bar. *Reset demo* is in the sidebar footer.
 
-## Quick start on a Mac (offline, about 3 minutes)
+The demo runs on built-in sample data (synthetic circulars, SINTETIK - CONTOH SAHAJA). The Python package below is the reference implementation with the real search, validity engine, packs and evaluation.
+
+## Python version (Streamlit) - reference implementation
 
 1. **Check Python.** Open Terminal and run `python3 --version`. You need **3.10 or newer**.
    If it says 3.9 (the Mac default), install Python 3.12 from https://www.python.org/downloads/ and open a new Terminal.
