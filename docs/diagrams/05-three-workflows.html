@@ -1,0 +1,420 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=1920, initial-scale=1">
+<title>MixUp Three Workflows</title>
+<style>
+  :root {
+    --ink: #111827;
+    --ink-2: #374151;
+    --muted: #4B5563;
+    --line: #E5E7EB;
+    --bg: #FFFFFF;
+    --bg-soft: #F9FAFB;
+    --purple: #6D28D9;
+    --purple-dark: #4C1D95;
+    --purple-soft: #EDE9FE;
+    --purple-faint: #F5F3FF;
+    --purple-line: #C4B5FD;
+    --green-bg: #DCFCE7; --green-ink: #166534; --green-line: #86EFAC;
+    --amber-bg: #FEF3C7; --amber-ink: #92400E; --amber-line: #FCD34D;
+    --red-bg: #FEE2E2;   --red-ink: #991B1B;   --red-line: #FCA5A5; --red: #DC2626;
+    --grey-bg: #F3F4F6;  --grey-ink: #374151;  --grey-line: #D1D5DB;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  html, body { width: 1920px; height: 1080px; background: var(--bg); }
+  body {
+    font-family: Inter, Helvetica, Arial, sans-serif;
+    color: var(--ink);
+    font-size: 22px;
+    line-height: 1.3;
+    -webkit-font-smoothing: antialiased;
+    font-feature-settings: "cv11", "ss01";
+  }
+  .canvas { position: relative; width: 1920px; height: 1080px; overflow: hidden; background: var(--bg); }
+
+  /* ---------- header ---------- */
+  .kicker {
+    position: absolute; left: 56px; top: 44px;
+    font-size: 22px; font-weight: 700; letter-spacing: 0.08em; text-transform: uppercase;
+    color: var(--purple);
+  }
+  .title {
+    position: absolute; left: 56px; top: 76px;
+    font-size: 56px; font-weight: 800; letter-spacing: -0.02em; line-height: 1.1;
+  }
+  .pill-top {
+    position: absolute; right: 56px; top: 70px;
+    display: flex; align-items: center; gap: 10px;
+    padding: 10px 18px; border-radius: 999px;
+    border: 2px solid var(--purple-line); background: var(--purple-faint);
+    color: var(--purple-dark); font-weight: 600; font-size: 22px;
+  }
+  .pill-top svg { width: 28px; height: 28px; }
+
+  /* ---------- lanes ---------- */
+  .lane {
+    position: absolute; left: 56px; width: 1808px; height: 220px;
+    display: flex;
+    background: var(--bg-soft); border: 2px solid var(--line); border-radius: 20px;
+  }
+  .lane-head {
+    flex: 0 0 214px;
+    background: var(--purple-soft);
+    border-radius: 18px 0 0 18px;
+    border-right: 2px solid var(--purple-line);
+    padding: 16px 16px;
+    display: flex; flex-direction: column; justify-content: center; gap: 12px;
+  }
+  .lh-icon {
+    flex: none; width: 50px; height: 50px; border-radius: 14px;
+    background: var(--purple); color: #fff;
+    display: flex; align-items: center; justify-content: center;
+  }
+  .lh-icon svg { width: 30px; height: 30px; }
+  .lh-title { font-size: 24px; font-weight: 800; line-height: 1.15; letter-spacing: -0.015em; color: var(--purple-dark); }
+  .actor {
+    display: inline-flex; align-items: center; gap: 8px; align-self: flex-start;
+    padding: 4px 13px 4px 9px; border-radius: 999px;
+    background: #fff; border: 2px solid var(--purple-line);
+    font-size: 20px; font-weight: 700; color: var(--ink); white-space: nowrap;
+  }
+  .actor svg { width: 22px; height: 22px; color: var(--purple); flex: none; }
+
+  .steps { flex: 1; display: flex; align-items: stretch; padding: 10px 14px; min-width: 0; }
+  .arr { flex: 0 0 26px; display: flex; align-items: center; justify-content: center; }
+  .arr svg { width: 26px; height: 24px; display: block; }
+
+  .step {
+    flex: 1 1 0; min-width: 0;
+    background: #fff; border: 2px solid var(--line); border-radius: 16px;
+    padding: 12px 14px;
+    display: flex; flex-direction: column; gap: 7px;
+    overflow: hidden;
+  }
+  .lane.a .step, .lane.b .step { padding: 12px 13px; }
+  .lane.c .step { padding: 12px 11px; }
+  .lane.a .step.final, .lane.b .step.final { flex-grow: 1.08; }
+  .step.final { border-color: var(--purple); box-shadow: 0 0 0 4px var(--purple-soft); overflow: visible; }
+  .step-head { display: flex; align-items: center; justify-content: space-between; margin-bottom: 2px; }
+  .num {
+    width: 38px; height: 38px; border-radius: 50%;
+    background: var(--purple); color: #fff;
+    font-weight: 800; font-size: 21px;
+    display: flex; align-items: center; justify-content: center; flex: none;
+  }
+  .icon { width: 30px; height: 30px; color: var(--purple); flex: none; }
+  .step h3 {
+    font-size: 23px; font-weight: 750; line-height: 1.17; letter-spacing: -0.015em;
+    text-wrap: balance;
+  }
+  .lane.c .step h3 { font-size: 22px; }
+  .sub { color: var(--muted); font-size: 20px; line-height: 1.28; }
+  .sub b { color: var(--ink-2); font-weight: 650; }
+  .em { color: var(--purple-dark); font-weight: 650; font-size: 20px; line-height: 1.28; }
+
+  .btn {
+    align-self: flex-start;
+    display: inline-flex; align-items: center;
+    padding: 5px 11px; border-radius: 10px;
+    background: var(--purple); color: #fff;
+    font-size: 20px; font-weight: 700; white-space: nowrap; letter-spacing: -0.005em;
+  }
+  .reject { display: flex; align-items: center; gap: 6px; color: var(--red-ink); font-weight: 650; font-size: 20px; line-height: 1.2; }
+  .reject svg { width: 20px; height: 20px; flex: none; }
+
+  .checks { display: flex; flex-direction: column; gap: 3px; }
+  .check { display: flex; align-items: center; gap: 4px; font-size: 20px; font-weight: 600; color: var(--ink-2); line-height: 1.25; white-space: nowrap; }
+  .check svg { width: 18px; height: 18px; color: var(--purple); flex: none; }
+
+  .metric { font-size: 36px; font-weight: 800; color: var(--purple); letter-spacing: -0.02em; line-height: 1.15; margin-top: 2px; }
+
+  .bell-dot {
+    width: 38px; height: 38px; border-radius: 50%;
+    background: var(--purple); color: #fff;
+    display: flex; align-items: center; justify-content: center; flex: none;
+  }
+  .bell-dot svg { width: 22px; height: 22px; }
+  .notif-line { font-size: 20px; font-weight: 600; color: var(--ink-2); }
+
+  .badge {
+    display: inline-flex; align-items: center; gap: 6px; align-self: flex-start;
+    padding: 3px 11px 3px 8px; border-radius: 999px; border: 2px solid;
+    font-weight: 700; font-size: 20px; white-space: nowrap; line-height: 1.25;
+  }
+  .badge svg { width: 18px; height: 18px; flex: none; }
+  .badge.can  { background: var(--red-bg); color: var(--red-ink); border-color: var(--red-line); }
+
+  /* ---------- hand-off connectors ---------- */
+  svg.overlay { position: absolute; left: 0; top: 0; width: 1920px; height: 1080px; pointer-events: none; }
+  .handoff {
+    position: absolute; transform: translate(-50%, -50%);
+    display: inline-flex; align-items: center; gap: 8px; white-space: nowrap;
+    padding: 3px 14px 3px 10px; border-radius: 999px;
+    background: #fff; border: 2px solid var(--purple-line);
+    font-size: 20px; font-weight: 650; color: var(--purple-dark); line-height: 1.25;
+  }
+  .handoff svg { width: 20px; height: 20px; color: var(--purple); flex: none; }
+
+  /* ---------- footer ---------- */
+  .takeaway {
+    position: absolute; left: 56px; top: 984px;
+    display: flex; align-items: center; gap: 18px;
+    font-size: 36px; font-weight: 800; letter-spacing: -0.01em; white-space: nowrap;
+  }
+  .takeaway .bar { width: 8px; height: 46px; border-radius: 4px; background: var(--purple); }
+  .takeaway em { font-style: normal; color: var(--purple); }
+  .takeaway .to { color: var(--purple); font-weight: 700; margin: 0 2px; }
+  .synthetic {
+    position: absolute; right: 56px; top: 996px;
+    font-size: 22px; color: #6B7280; font-style: italic;
+    border: 2px dashed var(--grey-line); border-radius: 8px; padding: 4px 12px;
+  }
+</style>
+</head>
+<body>
+<div class="canvas">
+
+  <!-- shared icon defs -->
+  <svg width="0" height="0" style="position:absolute" aria-hidden="true">
+    <defs>
+      <symbol id="i-check" viewBox="0 0 24 24"><path d="M5 12.5l4.5 4.5L19 7.5" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"/></symbol>
+      <symbol id="i-x" viewBox="0 0 24 24"><path d="M6.5 6.5l11 11M17.5 6.5l-11 11" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round"/></symbol>
+      <symbol id="i-code" viewBox="0 0 24 24"><g fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M8 6.5L2.5 12 8 17.5M16 6.5l5.5 5.5-5.5 5.5M13.5 4.5l-3 15"/></g></symbol>
+      <symbol id="i-building" viewBox="0 0 24 24"><g fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2.8L21 8H3z"/><path d="M5.5 11v6.5M10 11v6.5M14 11v6.5M18.5 11v6.5"/><path d="M3 21h18"/></g></symbol>
+      <symbol id="i-laptop" viewBox="0 0 24 24"><g fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="4" y="5" width="16" height="11" rx="1.5"/><path d="M2 19.5h20"/></g></symbol>
+      <symbol id="i-user" viewBox="0 0 24 24"><g fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><circle cx="12" cy="8" r="4"/><path d="M4 21c1-4.2 4.2-6.5 8-6.5s7 2.3 8 6.5"/></g></symbol>
+      <symbol id="i-file-up" viewBox="0 0 24 24"><g fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 2.5h8l4 4v15H6z"/><path d="M14 2.5v4h4"/><path d="M12 18v-7M9 13.5l3-3 3 3"/></g></symbol>
+      <symbol id="i-scan" viewBox="0 0 24 24"><g fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 5h11M4 10h8M4 15h6M4 20h5"/><circle cx="16.5" cy="15.5" r="3.6"/><path d="M19.2 18.2L22 21"/></g></symbol>
+      <symbol id="i-user-check" viewBox="0 0 24 24"><g fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="9.5" cy="7.5" r="4"/><path d="M2.5 21c.8-4 3.6-6.3 7-6.3 1.6 0 3 .5 4.2 1.4"/><path d="M15 18.5l2.3 2.3 4.7-4.8"/></g></symbol>
+      <symbol id="i-doc-check" viewBox="0 0 24 24"><g fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 2.5h8l4 4v15H6z"/><path d="M14 2.5v4h4"/><path d="M9 14l2.2 2.2L15.5 12"/></g></symbol>
+      <symbol id="i-package" viewBox="0 0 24 24"><g fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2.5l8.5 4.5v10L12 21.5 3.5 17V7z"/><path d="M3.5 7L12 11.5 20.5 7M12 11.5v10"/></g></symbol>
+      <symbol id="i-folder" viewBox="0 0 24 24"><g fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 6.5A1.5 1.5 0 0 1 4.5 5H9l2 2.5h8.5A1.5 1.5 0 0 1 21 9v9.5a1.5 1.5 0 0 1-1.5 1.5h-15A1.5 1.5 0 0 1 3 18.5z"/><path d="M8.5 14h7M12.5 11l3 3-3 3"/></g></symbol>
+      <symbol id="i-refresh" viewBox="0 0 24 24"><g fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 11a8 8 0 0 0-14.3-4.6M4 13a8 8 0 0 0 14.3 4.6"/><path d="M5 2.8v4.1h4.1M19 21.2v-4.1h-4.1"/></g></symbol>
+      <symbol id="i-list" viewBox="0 0 24 24"><g fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 2.5h12v19H6z"/><path d="M9 7.5h6M9 11h6M9 14.5h3"/></g></symbol>
+      <symbol id="i-shield-check" viewBox="0 0 24 24"><g fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2.5l8 3v6c0 5-3.4 8.7-8 10-4.6-1.3-8-5-8-10v-6l8-3z"/><path d="M8.5 12l2.5 2.5 4.5-5"/></g></symbol>
+      <symbol id="i-download" viewBox="0 0 24 24"><g fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3v11M7.5 9.5L12 14l4.5-4.5"/><path d="M4 15v5h16v-5"/></g></symbol>
+      <symbol id="i-compare" viewBox="0 0 24 24"><g fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 8h13M13.5 4.5L17 8l-3.5 3.5"/><path d="M20 16H7M10.5 12.5L7 16l3.5 3.5"/></g></symbol>
+      <symbol id="i-bell" viewBox="0 0 24 24"><g fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 16.5V11a6 6 0 0 1 12 0v5.5l1.6 2H4.4z"/><path d="M10 21h4"/></g></symbol>
+      <symbol id="i-chat" viewBox="0 0 24 24"><g fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round"><path d="M4 5h16v11H10l-5 4v-4H4z"/></g></symbol>
+      <symbol id="i-shield" viewBox="0 0 24 24"><g fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round" stroke-linecap="round"><path d="M12 2.5l8 3v6c0 5-3.4 8.7-8 10-4.6-1.3-8-5-8-10v-6l8-3z"/><rect x="9" y="11" width="6" height="5" rx="1"/><path d="M10.3 11V9.6a1.7 1.7 0 0 1 3.4 0V11"/></g></symbol>
+      <symbol id="i-tag" viewBox="0 0 24 24"><g fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round" stroke-linecap="round"><path d="M3 12V4h8l10 10-8 8L3 12z"/><circle cx="7.5" cy="8" r="1.5"/></g></symbol>
+      <symbol id="i-search" viewBox="0 0 24 24"><g fill="none" stroke="currentColor" stroke-linecap="round"><circle cx="10.5" cy="10.5" r="6.5" stroke-width="2.2"/><path d="M15.5 15.5L21 21" stroke-width="2.4"/></g></symbol>
+      <symbol id="i-filter" viewBox="0 0 24 24"><g fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round"><path d="M3.5 4.5h17l-6.5 8v6l-4 2v-8z"/></g></symbol>
+      <symbol id="i-files" viewBox="0 0 24 24"><g fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M8.5 2.5h7.5l4 4v12H8.5z"/><path d="M16 2.5v4h4"/><path d="M4.5 6.5v15h11"/></g></symbol>
+      <symbol id="i-cpu" viewBox="0 0 24 24"><g fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="6" y="6" width="12" height="12" rx="1.5"/><rect x="9.5" y="9.5" width="5" height="5"/><path d="M9.5 2.5V6M14.5 2.5V6M9.5 18v3.5M14.5 18v3.5M2.5 9.5H6M2.5 14.5H6M18 9.5h3.5M18 14.5h3.5"/></g></symbol>
+      <symbol id="i-circle-check" viewBox="0 0 24 24"><g fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9.5" stroke-width="2"/><path d="M7.5 12.3l3 3 6-6" stroke-width="2.2"/></g></symbol>
+      <symbol id="i-arrow" viewBox="0 0 26 24"><path d="M2 12H14" stroke="#6D28D9" stroke-width="4" stroke-linecap="round"/><path d="M12.5 5.5L23.5 12 12.5 18.5z" fill="#6D28D9"/></symbol>
+    </defs>
+  </svg>
+
+  <div class="kicker">How it works</div>
+  <div class="title">Three workflows behind MixUp</div>
+  <div class="pill-top">
+    <svg><use href="#i-code"/></svg>
+    One codebase, two modes
+  </div>
+
+  <!-- ===================== LANE A: Publish a pack ===================== -->
+  <div class="lane a" id="laneA" style="top:178px">
+    <div class="lane-head">
+      <div class="lh-icon"><svg><use href="#i-building"/></svg></div>
+      <div class="lh-title">Publish<br>a pack</div>
+      <div class="actor">Publisher</div>
+    </div>
+    <div class="steps">
+      <div class="step" data-check="A1">
+        <div class="step-head"><div class="num">1</div><svg class="icon"><use href="#i-file-up"/></svg></div>
+        <h3>Upload circulars</h3>
+        <div class="sub">Public PDFs +<br>synthetic Terhad</div>
+      </div>
+      <div class="arr"><svg><use href="#i-arrow"/></svg></div>
+      <div class="step" data-check="A2">
+        <div class="step-head"><div class="num">2</div><svg class="icon"><use href="#i-scan"/></svg></div>
+        <h3>Parse, OCR, chunk, embed</h3>
+        <div class="sub">Tesseract · BGE&#8209;M3</div>
+      </div>
+      <div class="arr"><svg><use href="#i-arrow"/></svg></div>
+      <div class="step" data-check="A3">
+        <div class="step-head"><div class="num">3</div><svg class="icon"><use href="#i-user-check"/></svg></div>
+        <h3>Extract + verify relations</h3>
+        <div class="em">Human approves</div>
+      </div>
+      <div class="arr"><svg><use href="#i-arrow"/></svg></div>
+      <div class="step" data-check="A4">
+        <div class="step-head"><div class="num">4</div><svg class="icon"><use href="#i-doc-check"/></svg></div>
+        <h3>Recompute statuses</h3>
+        <div class="sub">+ change summaries</div>
+      </div>
+      <div class="arr"><svg><use href="#i-arrow"/></svg></div>
+      <div class="step" data-check="A5">
+        <div class="step-head"><div class="num">5</div><svg class="icon"><use href="#i-package"/></svg></div>
+        <h3>Build packs vN, sign</h3>
+        <div class="sub">One per tier ·<br>SHA&#8209;256 + Ed25519</div>
+      </div>
+      <div class="arr"><svg><use href="#i-arrow"/></svg></div>
+      <div class="step final" id="A6" data-check="A6">
+        <div class="step-head"><div class="num">6</div><svg class="icon"><use href="#i-folder"/></svg></div>
+        <h3>Copy to channel</h3>
+        <div class="sub">Packs + manifest.json</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ===================== LANE B: Update an officer's app ===================== -->
+  <div class="lane b" id="laneB" style="top:450px">
+    <div class="lane-head">
+      <div class="lh-icon"><svg><use href="#i-laptop"/></svg></div>
+      <div class="lh-title">Update an officer&rsquo;s app</div>
+      <div class="actor">Officer app</div>
+    </div>
+    <div class="steps">
+      <div class="step" data-check="B1">
+        <div class="step-head"><div class="num">1</div><svg class="icon"><use href="#i-refresh"/></svg></div>
+        <span class="btn">Semak kemas kini</span>
+        <div class="sub">Check for updates,<br>also at start-up</div>
+      </div>
+      <div class="arr"><svg><use href="#i-arrow"/></svg></div>
+      <div class="step" id="B2" data-check="B2">
+        <div class="step-head"><div class="num">2</div><svg class="icon"><use href="#i-list"/></svg></div>
+        <h3>Read manifest</h3>
+        <div class="sub">Copy newer packs,<br>cleared tiers only</div>
+      </div>
+      <div class="arr"><svg><use href="#i-arrow"/></svg></div>
+      <div class="step" data-check="B3">
+        <div class="step-head"><div class="num">3</div><svg class="icon"><use href="#i-shield-check"/></svg></div>
+        <h3>Verify</h3>
+        <div class="sub">Checksum, signature<br>+ embedding model</div>
+        <div class="reject"><svg><use href="#i-x"/></svg>Any fail: reject</div>
+      </div>
+      <div class="arr"><svg><use href="#i-arrow"/></svg></div>
+      <div class="step" id="B4" data-check="B4">
+        <div class="step-head"><div class="num">4</div><svg class="icon"><use href="#i-download"/></svg></div>
+        <h3>Atomic install</h3>
+        <div class="sub">Previous kept<br>for rollback</div>
+      </div>
+      <div class="arr"><svg><use href="#i-arrow"/></svg></div>
+      <div class="step" data-check="B5">
+        <div class="step-head"><div class="num">5</div><svg class="icon"><use href="#i-compare"/></svg></div>
+        <h3>Compare versions</h3>
+        <div class="sub">Old vs new pack</div>
+      </div>
+      <div class="arr"><svg><use href="#i-arrow"/></svg></div>
+      <div class="step final" data-check="B6">
+        <div class="step-head"><div class="bell-dot"><svg><use href="#i-bell"/></svg></div></div>
+        <h3>Kemas kini tersedia</h3>
+        <div class="notif-line">SPP 1/2023 kini</div>
+        <span class="badge can"><svg><use href="#i-x"/></svg>Dibatalkan</span>
+      </div>
+    </div>
+  </div>
+
+  <!-- ===================== LANE C: Ask a question offline ===================== -->
+  <div class="lane c" id="laneC" style="top:722px">
+    <div class="lane-head">
+      <div class="lh-icon"><svg><use href="#i-user"/></svg></div>
+      <div class="lh-title">Ask a question offline</div>
+      <div class="actor">Officer</div>
+    </div>
+    <div class="steps">
+      <div class="step" data-check="C1">
+        <div class="step-head"><div class="num">1</div><svg class="icon"><use href="#i-chat"/></svg></div>
+        <h3>Ask</h3>
+        <div class="sub">BM, EN<br>or mixed</div>
+      </div>
+      <div class="arr"><svg><use href="#i-arrow"/></svg></div>
+      <div class="step" id="C2" data-check="C2">
+        <div class="step-head"><div class="num">2</div><svg class="icon"><use href="#i-shield"/></svg></div>
+        <h3>Allowed packs only</h3>
+        <div class="sub">By clearance</div>
+      </div>
+      <div class="arr"><svg><use href="#i-arrow"/></svg></div>
+      <div class="step" data-check="C3">
+        <div class="step-head"><div class="num">3</div><svg class="icon"><use href="#i-tag"/></svg></div>
+        <h3>Rewrite query</h3>
+        <div class="sub">BM + EN<br>keywords</div>
+      </div>
+      <div class="arr"><svg><use href="#i-arrow"/></svg></div>
+      <div class="step" data-check="C4">
+        <div class="step-head"><div class="num">4</div><svg class="icon"><use href="#i-search"/></svg></div>
+        <h3>Hybrid search</h3>
+        <div class="sub">FTS5 + trigram<br>+ vectors, RRF</div>
+      </div>
+      <div class="arr"><svg><use href="#i-arrow"/></svg></div>
+      <div class="step" data-check="C5">
+        <div class="step-head"><div class="num">5</div><svg class="icon"><use href="#i-filter"/></svg></div>
+        <h3>Rerank top 5</h3>
+        <div class="checks">
+          <div class="check"><svg><use href="#i-check"/></svg>Validity</div>
+          <div class="check"><svg><use href="#i-check"/></svg>Jurisdiction</div>
+          <div class="check"><svg><use href="#i-check"/></svg>Excluded list</div>
+        </div>
+      </div>
+      <div class="arr"><svg><use href="#i-arrow"/></svg></div>
+      <div class="step" data-check="C6">
+        <div class="step-head"><div class="num">6</div><svg class="icon"><use href="#i-files"/></svg></div>
+        <h3>Sources shown</h3>
+        <div class="metric">&lt; 2 s</div>
+      </div>
+      <div class="arr"><svg><use href="#i-arrow"/></svg></div>
+      <div class="step" data-check="C7">
+        <div class="step-head"><div class="num">7</div><svg class="icon"><use href="#i-cpu"/></svg></div>
+        <h3>Local LLM</h3>
+        <div class="sub">Streams<br>the answer</div>
+      </div>
+      <div class="arr"><svg><use href="#i-arrow"/></svg></div>
+      <div class="step final" data-check="C8">
+        <div class="step-head"><div class="num">8</div><svg class="icon"><use href="#i-circle-check"/></svg></div>
+        <h3>Validate citations</h3>
+        <div class="sub">Log locally</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ===== Hand-off connectors between lanes (drawn from live layout) ===== -->
+  <svg class="overlay" id="overlay" viewBox="0 0 1920 1080" aria-hidden="true">
+    <defs>
+      <marker id="ah" viewBox="0 0 10 10" refX="7" refY="5" markerWidth="5" markerHeight="5" orient="auto-start-reverse">
+        <path d="M0 0L10 5L0 10z" fill="#6D28D9"/>
+      </marker>
+    </defs>
+    <g id="links" stroke="#7C3AED" stroke-width="3" fill="none" stroke-dasharray="8 6" stroke-linecap="round" marker-end="url(#ah)"></g>
+  </svg>
+  <div class="handoff" id="h1"><svg><use href="#i-package"/></svg>Signed packs via shared folder, intranet or USB</div>
+  <div class="handoff" id="h2"><svg><use href="#i-download"/></svg>Installed packs, read-only</div>
+
+  <!-- ===== Footer ===== -->
+  <div class="takeaway"><span class="bar"></span><span>Publish verified rules <span class="to">&rarr;</span> deliver signed packs <span class="to">&rarr;</span> <em>answer offline with proof.</em></span></div>
+  <div class="synthetic">Contoh sintetik / synthetic example</div>
+
+</div>
+<script>
+  (function () {
+    const canvas = document.querySelector('.canvas').getBoundingClientRect();
+    const r = (el) => {
+      const b = el.getBoundingClientRect();
+      return { l: b.left - canvas.left, t: b.top - canvas.top, r: b.right - canvas.left, b: b.bottom - canvas.top,
+               cx: (b.left + b.right) / 2 - canvas.left };
+    };
+    const links = document.getElementById('links');
+    function connect(srcId, dstId, srcLaneId, dstLaneId, labelId, labelX) {
+      const s = r(document.getElementById(srcId)), d = r(document.getElementById(dstId));
+      const la = r(document.getElementById(srcLaneId)), lb = r(document.getElementById(dstLaneId));
+      const ym = Math.round((la.b + lb.t) / 2);
+      const x1 = Math.round(s.cx), x2 = Math.round(d.cx), y1 = Math.round(s.b) + 2, y2 = Math.round(d.t) - 6;
+      const rad = 10, dir = x2 < x1 ? -1 : 1;
+      const p = `M${x1} ${y1} V${ym - rad} Q${x1} ${ym} ${x1 + dir * rad} ${ym} H${x2 - dir * rad} Q${x2} ${ym} ${x2} ${ym + rad} V${y2}`;
+      const path = document.createElementNS('http://www.w3.org/2000/svg', 'path');
+      path.setAttribute('d', p);
+      links.appendChild(path);
+      const lab = document.getElementById(labelId);
+      lab.style.left = (labelX !== undefined ? labelX : (x1 + x2) / 2) + 'px';
+      lab.style.top = ym + 'px';
+    }
+    connect('A6', 'B2', 'laneA', 'laneB', 'h1');
+    connect('B4', 'C2', 'laneB', 'laneC', 'h2');
+  })();
+</script>
+</body>
+</html>
