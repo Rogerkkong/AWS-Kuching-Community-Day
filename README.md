@@ -1,6 +1,9 @@
-# MixUp Navigator
+#  AWS Kuching Community Day
 
-**Group 11 - AWS Kuching Community Day**
+Group 11 - MixUp Navigator
+Roger Kong Zhe Yi
+You Wee LIEW
+Xin THIAN
 
 | Ask: cited answer, cancelled circular excluded | Lineage: what replaced what |
 | --- | --- |
