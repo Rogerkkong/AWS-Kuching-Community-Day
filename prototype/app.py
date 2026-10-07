@@ -31,30 +31,36 @@ MODE_COLORS = {"offline": "gray", "ollama": "green", "bedrock": "blue"}
 
 STYLE = """
 <style>
-/* MixUp Navigator look: clean cards, purple accent (matches the pitch deck) */
+/* MixUp Navigator: paper background, navy accent, serif headline (teammate design) */
 #MainMenu, footer, [data-testid="stToolbar"], [data-testid="stDecoration"] {visibility: hidden; height: 0;}
-.block-container {padding-top: 1.2rem; padding-bottom: 3rem; max-width: 1180px;}
-html, body, [class*="css"] {font-family: Inter, -apple-system, "Segoe UI", Helvetica, Arial, sans-serif;}
-.mx-hero {display: flex; justify-content: space-between; align-items: flex-end; gap: 1rem;
-  padding: 1.4rem 1.6rem; border-radius: 1rem; margin-bottom: 1rem;
-  background: linear-gradient(135deg, #1E1B4B 0%, #4C1D95 60%, #6D28D9 100%); color: #fff;}
-.mx-brand {display: flex; align-items: center; gap: .7rem;}
-.mx-logo {display: inline-flex; align-items: center; justify-content: center; width: 2.4rem; height: 2.4rem;
-  border-radius: .6rem; background: #fff; color: #4C1D95; font-weight: 800; letter-spacing: .02em;}
-.mx-name {font-size: 2rem; font-weight: 800; letter-spacing: -.02em;}
-.mx-tag {margin-top: .5rem; font-size: 1.05rem; font-weight: 600; color: #EDE9FE;}
-.mx-tag-sub {font-size: .9rem; color: #C4B5FD; margin-top: .15rem;}
-.mx-team {color: #DDD6FE;}
-.mx-hero-right {display: flex; flex-direction: column; gap: .4rem; align-items: flex-end;}
-.mx-chip {font-size: .78rem; padding: .3rem .7rem; border-radius: 999px; background: rgba(255,255,255,.14);
-  border: 1px solid rgba(255,255,255,.25); color: #F5F3FF; white-space: nowrap;}
-.mx-chip-ok {background: rgba(16,185,129,.18); border-color: rgba(110,231,183,.5); color: #D1FAE5;}
-.stTabs [data-baseweb="tab-list"] {gap: .25rem; border-bottom: 1px solid #E5E7EB;}
-.stTabs [data-baseweb="tab"] {padding: .55rem .9rem; border-radius: .6rem .6rem 0 0; font-weight: 600;}
-.stTabs [aria-selected="true"] {background: #F5F3FF;}
-div[data-testid="stExpander"], div[data-testid="stForm"] {border-radius: .75rem;}
+.block-container {padding-top: 1rem; padding-bottom: 4rem; max-width: 1240px;}
+.mx-top {display: flex; justify-content: space-between; align-items: center; gap: 1rem;
+  padding: .2rem 0 .8rem 0; border-bottom: 1px solid #DAD5CB; margin-bottom: .6rem;}
+.mx-top h1 {font-family: "IBM Plex Sans", system-ui, sans-serif; font-size: 1.25rem; font-weight: 600; margin: 0; color: #1A1D21;}
+.mx-top .mx-sub {font-size: .85rem; color: #6B7178; margin-top: .1rem;}
+.mx-pills {display: flex; gap: .5rem;}
+.mx-pill {font-size: .8rem; padding: .35rem .8rem; border-radius: 999px; background: #fff; border: 1px solid #DAD5CB; color: #5D636B; white-space: nowrap;}
+.mx-pill b {color: #1A1D21; font-weight: 600;}
+.mx-pill .mx-count {background: #9A241C; color: #fff; border-radius: 999px; padding: .05rem .5rem; font-family: "IBM Plex Mono", monospace; font-size: .75rem; margin-left: .3rem;}
+.mx-update {background: #FBF3DF; border: 1px solid #F0DDA8; border-left: 4px solid #E0A93A; color: #3D4247;
+  padding: .6rem .9rem; border-radius: .4rem; font-size: .9rem; margin: .2rem 0 1rem 0;}
+.mx-update b {color: #7A4F00; margin-right: .6rem;}
+.mx-hero h2 {font-family: "IBM Plex Serif", Georgia, "Times New Roman", serif; font-size: 2.1rem; line-height: 1.2; font-weight: 600;
+  color: #1A1D21; margin: 1.2rem 0 .6rem 0; max-width: 34rem;}
+.mx-hero p {color: #5D636B; font-size: 1rem; max-width: 36rem; line-height: 1.55; margin-bottom: 1rem;}
+.mx-kicker {font-family: "IBM Plex Mono", Menlo, monospace; font-size: .72rem; letter-spacing: .12em; text-transform: uppercase; color: #6B7178;}
+.mx-brand {padding: .4rem 0 .9rem 0; border-bottom: 1px solid #2C3E48; margin-bottom: .8rem;}
+.mx-brand .mx-b1 {font-family: "IBM Plex Serif", Georgia, serif; font-size: 1.6rem; font-weight: 600; color: #FFFFFF; line-height: 1.1;}
+.mx-brand .mx-b2 {font-family: "IBM Plex Mono", Menlo, monospace; font-size: .7rem; letter-spacing: .25em; color: #9FB0BA; margin-top: .15rem;}
+.mx-statusbar {position: fixed; left: 0; right: 0; bottom: 0; z-index: 999; background: #E9E6E0; border-top: 1px solid #D6D1C7;
+  color: #3D4247; font-family: "IBM Plex Mono", Menlo, monospace; font-size: .75rem; padding: .35rem 1.2rem; text-align: right;}
+.mx-statusbar .mx-dot {color: #1E6B41; margin-right: .3rem;}
+.stTabs [data-baseweb="tab-list"] {gap: .1rem; border-bottom: 1px solid #DAD5CB;}
+.stTabs [data-baseweb="tab"] {padding: .5rem .8rem; font-weight: 500; color: #5D636B;}
+.stTabs [aria-selected="true"] {color: #1A1D21; font-weight: 600;}
+div[data-testid="stExpander"] {background: #FFFFFF; border: 1px solid #DAD5CB; border-radius: .5rem;}
 [data-testid="stSidebar"] .stButton button {width: 100%;}
-@media (max-width: 800px) {.mx-hero {flex-direction: column; align-items: flex-start;} .mx-hero-right {align-items: flex-start;}}
+[data-testid="stSidebar"] hr {border-color: #2C3E48;}
 </style>
 """
 
@@ -72,6 +78,7 @@ def get_store() -> Store:
 def render_sidebar(store: Store) -> common.UIContext:
     """User switcher, BM/EN toggle, model mode, notifications bell, Reset demo."""
     with st.sidebar:
+        st.markdown('<div class="mx-brand"><div class="mx-b1">MixUp</div><div class="mx-b2">NAVIGATOR</div></div>', unsafe_allow_html=True)
         lang_choice = st.segmented_control(
             "Bahasa / Language", ["BM", "EN"], default="BM", key="app_lang", selection_mode="single"
         )
@@ -164,20 +171,35 @@ def main() -> None:
     store = get_store()
     ctx = render_sidebar(store)
     inject_style()
-    tag_main, tag_sub = (TAGLINE_EN, TAGLINE_MS) if ctx.lang == "en" else (TAGLINE_MS, TAGLINE_EN)
-    offline = "Luar talian: semua jawapan dijana pada komputer ini" if ctx.lang == "ms" else "Offline: every answer is produced on this computer"
+    notes = alerts.notifications(store, ctx.user)
+    unread = sum(1 for n in notes if not n.get("read"))
+    jur = common.jurisdiction_label(ctx.user.jurisdiction, ctx.lang)
+    t = ctx.tr
+    st.markdown(
+        f"""
+<div class="mx-top">
+  <div><h1>{t('Tanya', 'Ask')}</h1><div class="mx-sub">{t('Jawapan dengan petikan daripada pekeliling yang berkuat kuasa', 'Cited answers from circulars in force')}</div></div>
+  <div class="mx-pills">
+    <span class="mx-pill">{t('Bidang kuasa', 'Jurisdiction')} <b>{jur}</b></span>
+    <span class="mx-pill"><b>{t('Notifikasi', 'Notifications')}</b><span class="mx-count">{unread}</span></span>
+  </div>
+</div>
+""",
+        unsafe_allow_html=True,
+    )
+    if unread:
+        latest = next((n for n in notes if not n.get("read")), {})
+        st.markdown(
+            f'<div class="mx-update"><b>{t("Kemas kini tersedia", "Update available")}</b>{latest.get("title", "")} · '
+            f'{t("ditandatangani oleh penerbit", "signed by the publisher")}</div>',
+            unsafe_allow_html=True,
+        )
     st.markdown(
         f"""
 <div class="mx-hero">
-  <div class="mx-hero-left">
-    <div class="mx-brand"><span class="mx-logo">MX</span><span class="mx-name">{PRODUCT_NAME}</span></div>
-    <div class="mx-tag">{tag_main}</div>
-    <div class="mx-tag-sub">{tag_sub} · <span class="mx-team">{ctx.t('by_team')}</span></div>
-  </div>
-  <div class="mx-hero-right">
-    <span class="mx-chip mx-chip-ok">&#9679; {offline}</span>
-    <span class="mx-chip">SINTETIK · CONTOH SAHAJA</span>
-  </div>
+  <h2>{t('Tanya tentang peraturan yang berkuat kuasa hari ini.', 'Ask about the rules in force today.')}</h2>
+  <p>{t('Jawapan hanya diambil daripada pekeliling yang masih terpakai, dengan petikan perenggan dan halaman. Pekeliling yang dibatalkan akan dinyatakan, bukan dipetik.',
+       'Answers come only from circulars still in force, citing the clause and page. Cancelled circulars are flagged, never quoted.')}</p>
 </div>
 """,
         unsafe_allow_html=True,
@@ -186,6 +208,12 @@ def main() -> None:
     for tab, (_, module) in zip(tabs, TABS):
         with tab:
             safe_render(module, ctx)
+    st.markdown(
+        f'<div class="mx-statusbar"><span class="mx-dot">&#9679;</span>{t("Rangkaian: luar talian", "Network: offline")} &nbsp;·&nbsp; '
+        f'{t("Model", "Model")}: {mode_label(store.llm)} &nbsp;·&nbsp; {t("sedia", "ready")} &nbsp;·&nbsp; {len(store.docs)} {t("pekeliling", "circulars")} '
+        f'&nbsp;·&nbsp; {PRODUCT_NAME} · Team MixUp</div>',
+        unsafe_allow_html=True,
+    )
 
 
 main()
