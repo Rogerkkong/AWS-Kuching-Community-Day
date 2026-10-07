@@ -8,8 +8,8 @@ from __future__ import annotations
 
 import streamlit as st
 
-from mixup import PRODUCT_NAME, TAGLINE_EN, TAGLINE_MS, alerts
-from mixup.config import PROVIDERS, load_settings
+from mixup import PRODUCT_NAME, TAGLINE_EN, TAGLINE_MS, alerts, netcheck
+from mixup.config import load_settings
 from mixup.llm import mode_label
 from mixup.models import CLASSIFICATION_LABELS
 from mixup.store import Store
@@ -18,13 +18,13 @@ from ui import admin_tab, analytics_tab, ask_tab, common, eval_tab, library_tab,
 st.set_page_config(page_title=PRODUCT_NAME, page_icon=":material/policy:", layout="wide")
 
 TABS = [
-    ("Tanya / Ask", ask_tab),
-    ("Salasilah & Perubahan / Lineage & Changes", lineage_tab),
-    ("Pentadbir / Admin", admin_tab),
-    ("Pek / Packs", packs_tab),
-    ("Penilaian / Evaluation", eval_tab),
-    ("Analitik / Analytics", analytics_tab),
-    ("Perpustakaan / Library", library_tab),
+    ("Tanya", "Ask", ask_tab),
+    ("Salasilah & Perubahan", "Lineage & Changes", lineage_tab),
+    ("Pentadbir", "Admin", admin_tab),
+    ("Pek", "Packs", packs_tab),
+    ("Penilaian", "Evaluation", eval_tab),
+    ("Analitik", "Analytics", analytics_tab),
+    ("Perpustakaan", "Library", library_tab),
 ]
 MODE_COLORS = {"offline": "gray", "ollama": "green", "bedrock": "blue"}
 
@@ -123,26 +123,29 @@ def render_sidebar(store: Store) -> common.UIContext:
                 getattr(alerts, "mark_all_read", lambda *_: None)(store, user)
                 st.rerun()
 
-        # Model mode
+        # Environment: detected automatically (network, local Ollama, AWS credentials)
+        forced = bool(st.session_state.get("app_force_offline"))
+        det = netcheck.detect(store.settings, forced_offline=forced)
+        if det.provider != store.llm.provider and st.session_state.get("app_auto_applied") != det.provider:
+            store.set_llm_provider(det.provider)  # falls back to offline inside make_llm on any error
+            st.session_state["app_auto_applied"] = det.provider
+        net_badge = ":green-badge[" + (det.label_en() if lang == "en" else det.label_ms()) + "]" if det.online \
+            else ":gray-badge[" + (det.label_en() if lang == "en" else det.label_ms()) + "]"
+        st.markdown(f"**{ctx.tr('Rangkaian', 'Network')}:** {net_badge}")
         st.markdown(f"**{ctx.t('llm_mode')}:** :{MODE_COLORS.get(store.llm.provider, 'gray')}-badge[{mode_label(store.llm)}]")
-        provider = st.selectbox(
-            ctx.t("llm_mode"),
-            PROVIDERS,
-            index=PROVIDERS.index(store.llm.provider) if store.llm.provider in PROVIDERS else 0,
-            key="app_provider",
-            label_visibility="collapsed",
-            format_func=lambda p: {"offline": "Offline", "ollama": "Ollama (local)", "bedrock": "Claude on Bedrock"}[p],
-        )
-        if provider == store.llm.provider:
-            st.session_state.pop("app_provider_applied", None)
-        elif st.session_state.get("app_provider_applied") != provider:  # try once per choice
-            store.set_llm_provider(provider)
-            st.session_state["app_provider_applied"] = provider
+        st.caption(ctx.tr("Dikesan secara automatik. Jawapan luar talian sentiasa tersedia.",
+                          "Detected automatically. Offline answers are always available."))
+        c1, c2 = st.columns(2)
+        if c1.button(ctx.tr("Semak semula", "Re-check"), key="app_recheck", icon=":material/refresh:", width="stretch"):
+            netcheck.clear_cache()
+            st.session_state.pop("app_auto_applied", None)
             st.rerun()
-        reason = getattr(store.llm, "reason", "") if store.llm.provider == "offline" and provider != "offline" else ""
-        if reason or store.llm.last_error:
-            st.caption(reason or store.llm.last_error)
-        st.caption(f"Hari ini / Today: {store.today.isoformat()}")
+        if c2.toggle(ctx.tr("Paksa luar talian", "Force offline"), key="app_force_offline"):
+            pass
+        if store.llm.last_error:
+            st.caption(store.llm.last_error)
+        st.caption(f"{ctx.tr('Hari ini', 'Today')}: {store.today.isoformat()}")
+        st.session_state["app_net_label"] = det.label_en() if lang == "en" else det.label_ms()
 
         if st.button(ctx.t("reset_demo"), icon=":material/restart_alt:", width="stretch", key="app_reset"):
             store.reset_runtime()
@@ -204,12 +207,12 @@ def main() -> None:
 """,
         unsafe_allow_html=True,
     )
-    tabs = st.tabs([name for name, _ in TABS])
-    for tab, (_, module) in zip(tabs, TABS):
+    tabs = st.tabs([en if ctx.lang == "en" else ms for ms, en, _ in TABS])
+    for tab, (_, _, module) in zip(tabs, TABS):
         with tab:
             safe_render(module, ctx)
     st.markdown(
-        f'<div class="mx-statusbar"><span class="mx-dot">&#9679;</span>{t("Rangkaian: luar talian", "Network: offline")} &nbsp;·&nbsp; '
+        f'<div class="mx-statusbar"><span class="mx-dot">&#9679;</span>{t("Rangkaian", "Network")}: {st.session_state.get("app_net_label", "")} &nbsp;·&nbsp; '
         f'{t("Model", "Model")}: {mode_label(store.llm)} &nbsp;·&nbsp; {t("sedia", "ready")} &nbsp;·&nbsp; {len(store.docs)} {t("pekeliling", "circulars")} '
         f'&nbsp;·&nbsp; {PRODUCT_NAME} · Team MixUp</div>',
         unsafe_allow_html=True,

@@ -297,7 +297,7 @@ def render(ctx: common.UIContext) -> None:
     c1.text_input(
         ctx.tr("Soalan anda", "Your question"),
         key="ask_question",
-        placeholder="Tanya tentang pekeliling... / Ask about circulars...",
+        placeholder=ctx.tr("Tanya tentang pekeliling...", "Ask about circulars..."),
     )
     c2.button(ctx.tr("Tanya", "Ask"), type="primary", icon=":material/search:", width="stretch", key="ask_go")
     t1, t2 = st.columns(2)
