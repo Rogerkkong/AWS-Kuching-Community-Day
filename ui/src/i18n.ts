@@ -2,7 +2,7 @@
 export type Lang = "ms" | "en";
 
 const S = {
-  appName: ["Pekeliling", "Pekeliling"],
+  appName: ["MixUp", "MixUp"],
   navigator: ["Navigator", "Navigator"],
   modeOfficer: ["Pegawai", "Officer"],
   modePublisher: ["Penerbit", "Publisher"],

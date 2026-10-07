@@ -29,7 +29,7 @@ if load_dotenv is not None:
     load_dotenv(REPO_ROOT / ".env", override=False)
 
 APP_NAME = "PekelilingNavigator"
-APP_TITLE = "Pekeliling Navigator"
+APP_TITLE = "MixUp Navigator"
 
 TIERS = {0: "terbuka", 1: "terhad", 2: "sulit"}
 TIER_LABELS = {0: "TERBUKA", 1: "TERHAD", 2: "SULIT"}

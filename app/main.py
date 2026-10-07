@@ -17,9 +17,9 @@ from app.config import Settings, get_settings
 from app.security import SessionTokenMiddleware
 from app.services.inference.client import get_client, warm_state
 
-SETUP_HTML = """<!doctype html><html><head><meta charset="utf-8"><title>Pekeliling Navigator</title></head>
+SETUP_HTML = """<!doctype html><html><head><meta charset="utf-8"><title>MixUp Navigator</title></head>
 <body style="font-family:system-ui;background:#F6F4F0;color:#1A1D21;padding:48px;max-width:720px">
-<h1>Pekeliling Navigator</h1><p>The interface has not been built yet. Run:</p>
+<h1>MixUp Navigator</h1><p>The interface has not been built yet. Run:</p>
 <pre style="background:#fff;padding:12px;border:1px solid #ddd">cd ui &amp;&amp; npm install &amp;&amp; npm run build</pre>
 <p>Antara muka belum dibina. Jalankan arahan di atas, kemudian buka semula aplikasi.</p></body></html>"""
 
@@ -57,7 +57,7 @@ class AppState:
 
 def create_app(mode: str = "officer", token: str = "dev-token", settings: Settings | None = None) -> FastAPI:
     settings = settings or get_settings()
-    app = FastAPI(title="Pekeliling Navigator local API", docs_url=None, redoc_url=None, openapi_url=None)
+    app = FastAPI(title="MixUp Navigator local API", docs_url=None, redoc_url=None, openapi_url=None)
     app.state.pn = AppState(settings, mode, token)
 
     from app.routers import alerts, analytics, ask, documents, packs, publisher, users

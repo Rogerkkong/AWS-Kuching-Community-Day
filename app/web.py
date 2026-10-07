@@ -40,7 +40,7 @@ def main(argv: list[str] | None = None) -> int:
     if get_client().health().get("reachable"):
         warm_up_async()
 
-    print("\nPekeliling Navigator - website mode")
+    print("\nMixUp Navigator - website mode")
     print(f"  Officer   : {officer.window_url}")
     print(f"  Publisher : {publisher.window_url}")
     print("Keep this window open. Press Ctrl+C to stop.\n", flush=True)

@@ -23,7 +23,7 @@ def test_no_cors_headers(officer):
 
 def test_static_ui_served_without_token(officer):
     r = officer.get("/")
-    assert r.status_code == 200 and "Pekeliling Navigator" in r.text
+    assert r.status_code == 200 and "MixUp Navigator" in r.text
 
 
 def test_sse_order_sources_tokens_final(officer):

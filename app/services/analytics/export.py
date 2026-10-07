@@ -46,7 +46,7 @@ def export_report(conn, out_dir: Path) -> Path:
 
 def validate_report(payload: dict) -> dict:
     if payload.get("kind") != "pekeliling-navigator-usage" or not isinstance(payload.get("queries"), list):
-        raise ValueError("Not a Pekeliling Navigator usage report")
+        raise ValueError("Not a MixUp Navigator usage report")
     allowed = {"query", "topic", "cluster", "answerable", "confidence", "excluded_circulars", "feedback", "hour"}
     payload["queries"] = [{k: v for k, v in q.items() if k in allowed} for q in payload["queries"] if isinstance(q, dict)]
     return payload

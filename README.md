@@ -1,4 +1,4 @@
-# Pekeliling Navigator
+# MixUp Navigator
 
 Offline, bilingual (Bahasa Melayu / English), validity-aware policy assistant for Malaysian civil servants,
 delivered as a desktop app. It answers only from rules that are **currently in force** (plus dated meeting

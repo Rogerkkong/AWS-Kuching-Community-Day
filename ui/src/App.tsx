@@ -135,7 +135,7 @@ export default function App() {
     );
   }
   if (bootError) return <div className="p-10 text-sm text-danger">{bootError}</div>;
-  if (!user || !health) return <div className="flex h-full items-center justify-center"><Spinner label="Pekeliling Navigator..." /></div>;
+  if (!user || !health) return <div className="flex h-full items-center justify-center"><Spinner label="MixUp Navigator..." /></div>;
 
   const nav = mode === "officer" ? OFFICER_NAV : PUBLISHER_NAV;
   const titles: Record<Page, [string, string]> = {
