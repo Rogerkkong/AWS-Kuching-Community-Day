@@ -1,0 +1,26 @@
+<!DOCTYPE html>
+<html lang="ms">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>MixUp Navigator</title>
+<meta name="description" content="MixUp Navigator - bilingual, validity-aware assistant for Malaysian civil servants. Self-contained demo: open from file://, no server, no model, no network.">
+<link rel="stylesheet" href="styles.css">
+<!-- Favicon as an inline SVG so no extra file or request is needed -->
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'%3E%3Crect width='16' height='16' rx='3' fill='%2316232A'/%3E%3Ctext x='8' y='11.5' font-family='Menlo,monospace' font-size='8' font-weight='600' fill='%23F6F4F0' text-anchor='middle'%3EMX%3C/text%3E%3C/svg%3E">
+</head>
+<body>
+<!-- The whole desktop-window frame is rendered by app.js into this root. -->
+<div id="app" class="page" aria-live="polite"></div>
+
+<noscript>
+  <div style="padding:40px;font-family:sans-serif">MixUp Navigator needs JavaScript. Everything runs inside this page: no server, no network.</div>
+</noscript>
+
+<!-- Order matters: data (window.MX_DATA) -> engine (window.MX) -> UI (window.APP).
+     If engine.js is missing, app.js falls back to a small placeholder engine so the page still renders. -->
+<script src="data.js"></script>
+<script src="engine.js"></script>
+<script src="app.js"></script>
+</body>
+</html>
