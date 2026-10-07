@@ -7,7 +7,7 @@ Choices that deviate from or refine the spec: DECISIONS.md. Milestone log: PROGR
 
 ```
 py -3.11 -m venv .venv                       # python.org 3.11 (SQLite extensions allowed)
-.venv/Scripts/pip install -r requirements.txt
+.venv/Scripts/pip install -r requirements-dev.txt
 cd ui && npm install && npm run build && cd ..   # UI -> ui/dist (Node only needed to build)
 
 .venv/Scripts/python scripts/make_synthetic_docs.py      # if data/raw is empty

@@ -30,12 +30,13 @@ def free_port() -> int:
 class SessionTokenMiddleware:
     """Pure ASGI middleware so streaming (SSE) responses pass through untouched."""
 
-    def __init__(self, app, token: str):
+    def __init__(self, app, token: str, public: bool = False):
         self.app = app
         self.token = token
+        self.public = public  # hosted demo with synthetic data only (PN_PUBLIC_DEMO=1)
 
     async def __call__(self, scope, receive, send):
-        if scope["type"] != "http":
+        if scope["type"] != "http" or self.public:
             return await self.app(scope, receive, send)
         headers = dict(scope.get("headers") or [])
         host = headers.get(b"host", b"").decode("latin-1").rsplit(":", 1)[0].strip("[]")

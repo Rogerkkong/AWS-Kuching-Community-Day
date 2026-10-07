@@ -41,7 +41,8 @@ def build_tier(pub: sqlite3.Connection, settings: Settings, tier: int, version: 
         tmp.unlink()
     pack = db.connect(tmp, vec=True)
     pack.executescript(db.PACK_SQL)
-    pack.execute(f"CREATE VIRTUAL TABLE vec_chunks USING vec0(embedding float[{settings.embed_dim}])")
+    if db.vec_available():
+        pack.execute(f"CREATE VIRTUAL TABLE vec_chunks USING vec0(embedding float[{settings.embed_dim}])")
 
     # Status reasons must not reveal higher-tier documents to this tier.
     hidden_sources = {r[0]: r[1] for r in pub.execute(
@@ -62,7 +63,9 @@ def build_tier(pub: sqlite3.Connection, settings: Settings, tier: int, version: 
         for chunk_id, blob in vecs:
             if len(blob) != settings.embed_dim * 4:
                 raise ValueError(f"Chunk {chunk_id} vector has {len(blob) // 4} dims, expected {settings.embed_dim}")
-            pack.execute("INSERT INTO vec_chunks (rowid, embedding) VALUES (?, ?)", (chunk_id, blob))
+            if db.vec_available():
+                pack.execute("INSERT INTO vec_chunks (rowid, embedding) VALUES (?, ?)", (chunk_id, blob))
+            pack.execute("INSERT INTO chunk_vectors (chunk_id, embedding) VALUES (?, ?)", (chunk_id, blob))
         missing = len(chunks) - len(vecs)
         if missing:
             raise ValueError(f"{missing} chunk(s) in tier {tier} have no embedding; re-run ingestion")

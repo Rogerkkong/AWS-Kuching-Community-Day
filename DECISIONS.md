@@ -117,3 +117,17 @@ Choices made while building, where the spec left room or where reality forced a 
 * **D36. Golden set** has 42 questions (28 BM, 10 EN, 4 mixed): 11 normal (incl. one cleared TERHAD
   question), 10 trap_cancelled, 5 jurisdiction, 5 unanswerable, 3 access, 3 minutes, 5 action. The brief
   asks for ~50% BM / 30% EN / 20% mixed; add more English and mixed questions with the real corpus.
+
+## Hosted demo (Vercel)
+
+* **D37. Public demo mode** (`PN_PUBLIC_DEMO=1`, set by `app/vercel_entry.py`) disables the session token and
+  Host check. Acceptable only because every document is synthetic; local runs keep both protections.
+* **D38. Cold-start bootstrap in /tmp**: Vercel's filesystem is read-only except `/tmp`, so the entry module
+  generates a throw-away key pair (no private key in git), ingests data/raw with the fake backend, builds and
+  installs v1. State is per instance and resets on a new instance.
+* **D39. sqlite-vec is optional.** Packs also store vectors in a plain `chunk_vectors` table; if the runtime's
+  SQLite cannot load extensions, vector search falls back to exact brute-force L2 in Python (fine for
+  hundreds of chunks).
+* **D40. `ui/dist` is committed** so Vercel's Python preset can serve the UI without a Node build step.
+  Dependencies: `requirements.txt` / `pyproject.toml` are runtime-only; desktop, OCR, tests and PyInstaller
+  live in `requirements-dev.txt`.

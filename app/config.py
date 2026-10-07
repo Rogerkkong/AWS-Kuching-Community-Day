@@ -70,6 +70,8 @@ class Settings:
     llamacpp_rerank_gguf: str = field(default_factory=lambda: _env("LLAMACPP_RERANK_GGUF", "models/bge-reranker-v2-m3-q8_0.gguf"))
     query_rewrite_mode: str = field(default_factory=lambda: _env("QUERY_REWRITE_MODE", "llm"))
     query_rewrite_timeout: float = field(default_factory=lambda: float(_env("QUERY_REWRITE_TIMEOUT", "8")))
+    # Hosted public demo (synthetic documents only): no session token, any Host header. Never for real data.
+    public_demo: bool = field(default_factory=lambda: _env("PN_PUBLIC_DEMO", "0") == "1")
     temperature: float = 0.1
     answer_max_tokens: int = 600
     num_ctx: int = 4096

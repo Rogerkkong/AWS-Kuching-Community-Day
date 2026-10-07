@@ -47,8 +47,13 @@ def _filtered_chunks(h: PackHandle, ids: list[int], statuses: tuple[str, ...], c
 def vector_list(h: PackHandle, qvec: list[float] | None, statuses, clearance, k: int, keep: int) -> list[dict]:
     if qvec is None:
         return []
-    hits = h.conn.execute("SELECT rowid, distance FROM vec_chunks WHERE embedding MATCH ? AND k = ? ORDER BY distance",
-                          (serialize_f32(qvec), k)).fetchall()
+    from app.db import vec_available
+
+    if vec_available():
+        hits = h.conn.execute("SELECT rowid, distance FROM vec_chunks WHERE embedding MATCH ? AND k = ? ORDER BY distance",
+                              (serialize_f32(qvec), k)).fetchall()
+    else:
+        hits = _brute_force(h, qvec, k)
     rows = _filtered_chunks(h, [r[0] for r in hits], statuses, clearance)
     out = []
     for rowid, dist in hits:
@@ -57,6 +62,17 @@ def vector_list(h: PackHandle, qvec: list[float] | None, statuses, clearance, k:
         if len(out) >= keep:
             break
     return out
+
+
+def _brute_force(h: PackHandle, qvec: list[float], k: int) -> list[tuple[int, float]]:
+    """Exact search without sqlite-vec: L2 distance over the pack's plain chunk_vectors table."""
+    from app.db import deserialize_f32
+
+    scored = []
+    for chunk_id, blob in h.conn.execute("SELECT chunk_id, embedding FROM chunk_vectors"):
+        vec = deserialize_f32(blob)
+        scored.append((chunk_id, sum((a - b) ** 2 for a, b in zip(qvec, vec)) ** 0.5))
+    return sorted(scored, key=lambda x: x[1])[:k]
 
 
 def keyword_list(h: PackHandle, fts_query: str, statuses, clearance, keep: int) -> list[dict]:

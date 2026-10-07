@@ -1,0 +1,10 @@
+.venv
+ui/node_modules
+workspace
+dist
+build
+dist_packs
+models
+eval/results
+**/*.pptx
+.claude

@@ -1,0 +1,7 @@
+# Local development, desktop window, OCR, tests and packaging
+-r requirements.txt
+pywebview>=5.0
+pytesseract>=0.3.10
+pytest>=8
+pytest-socket>=0.7
+pyinstaller>=6.5

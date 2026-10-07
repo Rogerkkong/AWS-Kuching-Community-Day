@@ -35,6 +35,15 @@ the Officer screens, Faizal (Publisher) sees the Publisher screens; Publisher ac
 officer accounts. If Ollama is not running, the fake backend is used automatically. Keep the console
 window open during the demo.
 
+## Hosted demo on Vercel (synthetic documents)
+
+The repo deploys to Vercel as-is: `pyproject.toml` points Vercel at `app/vercel_entry.py`, which on a cold
+start creates a throw-away key pair, ingests `data/raw` with the fake backend, builds and installs pack v1
+under `/tmp`, and serves the website (UI from the committed `ui/dist`). Hosted mode (`PN_PUBLIC_DEMO=1`)
+switches off the session token and Host check, so **use it only with the synthetic documents**. State lives
+in `/tmp` and resets whenever Vercel starts a new instance. After changing the UI, run `npm run build` in
+`ui/` and commit `ui/dist`.
+
 ## Requirements
 
 * Windows 10/11 (macOS/Linux work for development).
@@ -52,7 +61,7 @@ hash embeddings and extractive answers, labelled "fake-extractive" in the UI).
 
 ```bash
 py -3.11 -m venv .venv
-.venv/Scripts/pip install -r requirements.txt
+.venv/Scripts/pip install -r requirements-dev.txt
 cd ui && npm install && npm run build && cd ..
 copy .env.example .env        # then edit INFERENCE_BACKEND / models if needed
 ```

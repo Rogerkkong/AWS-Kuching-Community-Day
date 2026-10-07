@@ -18,6 +18,8 @@ export function initToken(): string | null {
   } catch {
     /* storage unavailable: token stays in memory only */
   }
+  // Hosted public demo (Vercel): the server runs without a session token; any value is accepted there.
+  if (!token) token = "public-demo";
   return token;
 }
 
