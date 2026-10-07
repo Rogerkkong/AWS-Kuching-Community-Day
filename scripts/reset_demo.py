@@ -7,6 +7,7 @@ Usage: python scripts/reset_demo.py [--officer] [--no-build]
 from __future__ import annotations
 
 import argparse
+import os
 import shutil
 import sys
 from datetime import datetime
@@ -17,6 +18,7 @@ from app.config import get_settings
 from app.services.inference.client import get_client
 from app.services.ingest.pipeline import ingest_paths
 from app.services.packs.build import build_packs
+from app.services.packs.sign import generate_keypair
 
 
 def main() -> int:
@@ -24,6 +26,14 @@ def main() -> int:
     ap.add_argument("--officer", action="store_true", help="also archive the Officer data folder (installed packs, app.db)")
     ap.add_argument("--no-build", action="store_true", help="only archive")
     args = ap.parse_args()
+    if "INFERENCE_BACKEND" not in os.environ and not get_client().health().get("reachable"):
+        # Same rule as `python -m app.web`, so the packs match the website's embedding model.
+        print("Ollama not reachable -> building with the fake backend (INFERENCE_BACKEND=fake).")
+        os.environ["INFERENCE_BACKEND"] = "fake"
+        from app.config import reset_settings
+        from app.services.inference.client import set_client
+        reset_settings()
+        set_client(None)
     s = get_settings()
     archive = s.workspace_dir / "archive" / datetime.now().strftime("%Y%m%d-%H%M%S")
     moved = []
@@ -46,6 +56,10 @@ def main() -> int:
     if args.no_build:
         return 0
 
+    if not s.private_key_path.exists():
+        # Fresh clone: the private key is never in git, so create this machine's own key pair.
+        generate_keypair(s.private_key_path, s.public_key_path, overwrite=True)
+        print("Created a new publisher key pair (workspace/keys/ + app/resources/publisher_public.pem)")
     client = get_client()
     if not client.health().get("reachable"):
         print("Inference backend not reachable; start Ollama or set INFERENCE_BACKEND=fake.")

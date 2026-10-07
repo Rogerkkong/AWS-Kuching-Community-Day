@@ -320,7 +320,7 @@ export default function App() {
                   <div className="text-sm text-[#4C5258]">{t(lang, "setupNoPacks")}</div>
                   {modelMissing && <div className="text-sm text-[#4C5258]">{t(lang, "setupNoModel")}<div className="mt-1 font-mono text-xs">ollama pull qwen3:4b · ollama pull bge-m3</div></div>}
                   <div className="flex gap-2">
-                    <button onClick={() => setPage("updates")} className="rounded-[7px] border-0 bg-accent px-4 py-2.5 text-[13px] font-semibold text-white">{t(lang, "checkUpdates")}</button>
+                    <button onClick={async () => { await checkUpdates(); setPage("updates"); }} className="rounded-[7px] border-0 bg-accent px-4 py-2.5 text-[13px] font-semibold text-white">{t(lang, "checkUpdates")}</button>
                     <button onClick={() => setPage("updates")} className="rounded-[7px] border border-[#D3CEC4] bg-white px-4 py-2.5 text-[13px] font-semibold">{t(lang, "installFromFile")}</button>
                   </div>
                 </div>

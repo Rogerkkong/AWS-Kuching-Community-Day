@@ -23,6 +23,7 @@ export function UpdatesPage() {
   const [results, setResults] = useState<Result[]>([]);
   const [error, setError] = useState<string | null>(null);
   const [checkError, setCheckError] = useState<string | null>(null);
+  const [checkedAt, setCheckedAt] = useState<string | null>(null);
   const [exported, setExported] = useState<string | null>(null);
   const packRef = useRef<HTMLInputElement>(null);
   const sigRef = useRef<HTMLInputElement>(null);
@@ -44,6 +45,7 @@ export function UpdatesPage() {
       const r = await api.post<{ error?: string }>("/api/packs/check", { source });
       if (r.error) setCheckError(r.error);
       await checkUpdates();
+      setCheckedAt(new Date().toLocaleTimeString());
     } finally {
       setBusy(null);
     }
@@ -113,8 +115,41 @@ export function UpdatesPage() {
               </button>
             </div>
           </div>
-          {checkError && <div className="text-xs text-muted">{t(lang, "sourceUnreachable")} <span className="font-mono">{checkError}</span></div>}
-          {!checkError && updates.length === 0 && <div className="text-xs text-muted">{t(lang, "noUpdates")}</div>}
+          {checkError && (
+            <ErrorNote
+              message={
+                /manifest\.json/.test(checkError)
+                  ? `${t(lang, "noPacksBuilt")} (${checkError})`
+                  : `${t(lang, "sourceUnreachable")} ${checkError}`
+              }
+            />
+          )}
+          {!checkError && checkedAt && (
+            <div className="text-xs font-semibold text-ink-2">
+              {updates.length ? `${t(lang, "foundUpdates")}: ${updates.length}` : t(lang, "noUpdates")} · {checkedAt}
+            </div>
+          )}
+          {!checkError && !checkedAt && updates.length === 0 && <div className="text-xs text-muted">{t(lang, "noUpdates")}</div>}
+          {updates.length > 0 && (
+            <div className="flex flex-col gap-2">
+              <span className="eyebrow">{t(lang, "availableUpdates")}</span>
+              {updates.map((u) => {
+                const current = packs.find((p) => p.tier === u.tier);
+                return (
+                  <div key={`${u.tier}-${u.version}`} className="grid grid-cols-[120px_1fr_auto] items-center gap-3 rounded-lg border border-[#EBD9AE] bg-[#FFFBF0] px-3.5 py-2.5 text-[13px]">
+                    <span className="font-semibold">Pek {u.tier_name}</span>
+                    <span className="text-[#4C5258]">
+                      {current ? `v${current.version} → ` : ""}<span className="font-mono font-semibold text-accent">v{u.version}</span> · {u.documents ?? "?"} {t(lang, "docCount")} ·{" "}
+                      {((u.size_bytes ?? 0) / 1e6).toFixed(1)} MB · {u.embedding_model}
+                      <br />
+                      <span className="font-mono text-[11px] text-faint">sha256 {String(u.sha256).slice(0, 16)}… · Ed25519 · {String(u.created_at).slice(0, 16).replace("T", " ")}</span>
+                    </span>
+                    <span className="text-xs text-[#6A4600]">{current ? t(lang, "newerVersion") : t(lang, "notInstalled")}</span>
+                  </div>
+                );
+              })}
+            </div>
+          )}
           {error && <ErrorNote message={error} />}
           {results.map((r) => (
             <div key={`${r.tier}-${r.version}`} className="flex flex-col border-t border-line-2">
