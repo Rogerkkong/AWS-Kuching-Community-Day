@@ -18,9 +18,9 @@ export function DocMeta({ doc }: { doc: Doc }) {
     [t(lang, "type"), t(lang, doc.doc_type)],
     [t(lang, "jurisdiction"), t(lang, doc.jurisdiction === "UNKNOWN" ? "UNKNOWN_J" : doc.jurisdiction)],
     [t(lang, "date"), fmtDate(lang, doc.issue_date)],
-    [lang === "ms" ? "Berkuat kuasa mulai" : "Effective from", doc.effective_date ? fmtDate(lang, doc.effective_date) : null],
-    [lang === "ms" ? "Pengeluar" : "Issuer", doc.issuer],
-    [lang === "ms" ? "Pemakaian" : "Applies to", doc.applicability],
+    [t(lang, "effectiveFrom"), doc.effective_date ? fmtDate(lang, doc.effective_date) : null],
+    [t(lang, "issuer"), doc.issuer],
+    [t(lang, "appliesTo"), doc.applicability],
   ];
   return (
     <div className="flex flex-col gap-2 rounded-lg border border-line bg-white p-3.5">

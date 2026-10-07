@@ -73,7 +73,7 @@ export function UpdatesPage() {
       form.append("pack", pack);
       form.append("signature", sig);
       const r = await api.upload<Result & { error_code?: string }>("/api/packs/install-file", form);
-      if (!r.ok && !r.steps) setError(r.message ?? "Install failed");
+      if (!r.ok && !r.steps) setError(r.message ?? t(lang, "installFailed"));
       setResults(r.steps ? [r] : []);
       await Promise.all([refreshPacks(), refreshAlerts()]);
     } catch (e: any) {
@@ -187,7 +187,7 @@ export function UpdatesPage() {
               {p.file_path}
               <br />sha256 {p.sha256.slice(0, 16)}… · {(p.size_bytes / 1e6).toFixed(1)} MB · {p.embedding_model}
             </div>
-            {!p.embedding_ok && <ErrorNote message="Embedding model mismatch: this pack is not searched." />}
+            {!p.embedding_ok && <ErrorNote message={t(lang, "embeddingMismatch")} />}
             {p.previous_version && (
               <button onClick={() => rollback(p.tier)} className="self-start border-0 bg-transparent p-0 text-xs text-accent">{t(lang, "rollback")} (v{p.previous_version})</button>
             )}

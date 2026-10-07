@@ -15,6 +15,16 @@ One codebase, two modes:
 | **Publisher** | Knowledge administrator at head office | Upload PDFs, OCR, metadata, relation verification queue, status engine, change summaries, build **signed** knowledge packs (one SQLite file per clearance tier), usage dashboard |
 | **Officer** | Every officer's PC | Install packs (verified), ask questions fully offline, sources first then streamed cited answer, lineage, what-changed, notifications |
 
+## Quick start: website mode (live demo)
+
+```bash
+.venv/Scripts/python -m app.web
+```
+
+Or double-click `start_web.cmd`. This starts the **Officer** site (port 8765) and the **Publisher** site
+(port 8766) on 127.0.0.1 and opens both in the browser. If Ollama is not running, it uses the fake backend
+automatically. Keep the console window open during the demo.
+
 ## Requirements
 
 * Windows 10/11 (macOS/Linux work for development).

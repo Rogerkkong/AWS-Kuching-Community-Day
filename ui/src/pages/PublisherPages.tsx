@@ -258,7 +258,7 @@ export function PubBuildPage() {
     }
   }
   if (!info) return <div className="p-7"><Spinner label={t(lang, "loading")} /></div>;
-  const steps = ["Copy documents and verified relations", "Build keyword index (FTS5)", "Build circular-number trigram index", "Write sqlite-vec vectors (1024 dim.)", "Include change summaries and original PDFs", "Compute SHA-256 and Ed25519 signature"];
+  const steps = [1, 2, 3, 4, 5, 6].map((i) => t(lang, `build_${i}`));
   return (
     <div className="grid flex-1 grid-cols-[minmax(0,1fr)_420px] content-start gap-5 overflow-auto px-7 py-6">
       <div className="flex flex-col gap-3">
@@ -277,7 +277,7 @@ export function PubBuildPage() {
         })}
         <div className="flex flex-col gap-1.5 rounded-[10px] border border-line bg-white px-5 py-[18px] text-[13px] leading-relaxed text-[#33383D]">
           <span className="eyebrow">Pack</span>
-          {info.verified_relations} relations verified · {info.pending_relations} pending · {info.change_summaries} change summaries · embedding model {info.embedding_model} (1024 dim.)
+          {info.verified_relations} {t(lang, "packStats").replace("{p}", String(info.pending_relations)).replace("{s}", String(info.change_summaries))} {info.embedding_model} (1024 dim.)
           <span className="font-mono text-[11px] text-faint">{t(lang, "publishedTo")} {info.dist_packs_dir}</span>
         </div>
         {result && (
@@ -302,7 +302,7 @@ export function PubBuildPage() {
             </div>
           ))}
         </div>
-        {!info.private_key_present && <ErrorNote message="Private key missing: run scripts/make_keys.py" />}
+        {!info.private_key_present && <ErrorNote message={t(lang, "privateKeyMissing")} />}
         {error && <ErrorNote message={error} />}
         <label className="flex items-center gap-3 text-[13px]">
           {t(lang, "version")}

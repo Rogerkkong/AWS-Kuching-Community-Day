@@ -11,6 +11,13 @@ export function initToken(): string | null {
     url.searchParams.delete("token");
     window.history.replaceState(null, "", url.pathname + url.search + url.hash);
   }
+  // Website mode: keep the token for this tab only so a page refresh during a demo keeps working.
+  try {
+    if (token) sessionStorage.setItem("pn-token", token);
+    else token = sessionStorage.getItem("pn-token");
+  } catch {
+    /* storage unavailable: token stays in memory only */
+  }
   return token;
 }
 

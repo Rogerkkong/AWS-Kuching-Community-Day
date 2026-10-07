@@ -204,6 +204,19 @@ const S = {
   close: ["Tutup", "Close"],
   loading: ["Memuatkan...", "Loading..."],
   apiLine: ["token sesi aktif", "session token active"],
+  build_1: ["Salin dokumen dan hubungan yang disahkan", "Copy documents and verified relations"],
+  build_2: ["Bina indeks kata kunci (FTS5)", "Build keyword index (FTS5)"],
+  build_3: ["Bina indeks trigram nombor pekeliling", "Build circular-number trigram index"],
+  build_4: ["Tulis vektor sqlite-vec (1024 dim.)", "Write sqlite-vec vectors (1024 dim.)"],
+  build_5: ["Sertakan ringkasan perubahan dan PDF asal", "Include change summaries and original PDFs"],
+  build_6: ["Kira SHA-256 dan tandatangan Ed25519", "Compute SHA-256 and Ed25519 signature"],
+  privateKeyMissing: ["Kunci persendirian tiada: jalankan scripts/make_keys.py", "Private key missing: run scripts/make_keys.py"],
+  installFailed: ["Pemasangan gagal", "Install failed"],
+  embeddingMismatch: ["Model embedding tidak sepadan: pek ini tidak dicari.", "Embedding model mismatch: this pack is not searched."],
+  effectiveFrom: ["Berkuat kuasa mulai", "Effective from"],
+  issuer: ["Pengeluar", "Issuer"],
+  appliesTo: ["Pemakaian", "Applies to"],
+  packStats: ["hubungan disahkan · {p} menunggu · {s} ringkasan perubahan · model embedding", "relations verified · {p} pending · {s} change summaries · embedding model"],
 } as const;
 
 export type StrKey = keyof typeof S;
