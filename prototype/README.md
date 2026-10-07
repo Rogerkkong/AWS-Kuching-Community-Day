@@ -39,9 +39,11 @@ Tests: `pytest -q`. Reset the demo data: the **Set semula demo** button in the s
 4. Switch the sidebar user to **Pegawai Sarawak (Terbuka)** and click **Persekutuan vs Sarawak**: the Sarawak rule (10 days) comes first, the federal rule (7 days) beside it.
 5. Switch to **Admin**, open **Pentadbir / Admin**, click the demo circular **SPP 1/2026**, approve the detected relations.
    Switch back to an officer: the bell shows the update, and asking the travel-claim question again now cites **SPP 1/2026**.
-6. Switch between a **Terbuka** and a **Terhad** user to show restricted documents appearing only for cleared users.
-7. **Penilaian / Evaluation**: show the baseline vs MixUp Navigator numbers for the metrics slide.
-8. Press **Set semula demo** before you go on stage.
+6. **Pek / Packs** (as **Admin**): click **Bina pek v1**, then **Semak kemas kini & pasang**: the pack is verified (SHA-256 + Ed25519 signature) and installed.
+   Click **Bina pek v2**, then **Simulasi pek diubah suai**: the tampered pack is **rejected** and v1 stays active. This is the desktop edition's signed update mechanism.
+7. Switch between a **Terbuka** and a **Terhad** user to show restricted documents appearing only for cleared users (and the Terhad pack never offered to a Terbuka user).
+8. **Penilaian / Evaluation**: show the baseline vs MixUp Navigator numbers for the metrics slide.
+9. Press **Set semula demo** before you go on stage.
 
 ## Model modes (`LLM_PROVIDER` in `.env`, also switchable in the sidebar)
 

@@ -13,7 +13,7 @@ from mixup.config import PROVIDERS, load_settings
 from mixup.llm import mode_label
 from mixup.models import CLASSIFICATION_LABELS
 from mixup.store import Store
-from ui import admin_tab, analytics_tab, ask_tab, common, eval_tab, library_tab, lineage_tab
+from ui import admin_tab, analytics_tab, ask_tab, common, eval_tab, library_tab, lineage_tab, packs_tab
 
 st.set_page_config(page_title=PRODUCT_NAME, page_icon=":material/policy:", layout="wide")
 
@@ -21,6 +21,7 @@ TABS = [
     ("Tanya / Ask", ask_tab),
     ("Salasilah & Perubahan / Lineage & Changes", lineage_tab),
     ("Pentadbir / Admin", admin_tab),
+    ("Pek / Packs", packs_tab),
     ("Penilaian / Evaluation", eval_tab),
     ("Analitik / Analytics", analytics_tab),
     ("Perpustakaan / Library", library_tab),
